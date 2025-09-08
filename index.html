@@ -1290,7 +1290,8 @@ function addLine(text, opts={bold:false, size:12}) {
     // Save
         // Direct Blob download for better mobile behavior
     try {
-      const blob = doc.output('blob');
+      const ab = doc.output('arraybuffer');
+      const blob = new Blob([ab], {type:'application/octet-stream'});
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
@@ -1303,7 +1304,7 @@ function addLine(text, opts={bold:false, size:12}) {
       console.error('PDF save failed', err);
     }
     // Show success modal shortly after triggering download
-    if (typeof openPdfDone === 'function') { setTimeout(openPdfDone, 250); openPdfDone(); }
+    if (typeof openPdfDone === 'function') { requestAnimationFrame(()=>openPdfDone()); setTimeout(openPdfDone, 300); }
     // Show success modal
     if (typeof openPdfDone === 'function') { openPdfDone(); }
 return true;
