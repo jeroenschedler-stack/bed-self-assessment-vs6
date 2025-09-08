@@ -1530,71 +1530,161 @@ ok.onclick = function(){
     return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'_'+p(d.getHours())+'-'+p(d.getMinutes())+'-'+p(d.getSeconds());
   }
   function savePdfNow(){
-    var JS = getJsPDF();
+    var JS = (function(){ try { return (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : null; } catch(_) { return null; } })();
     if (!JS) { try { alert('PDF library is not loaded.'); } catch(_){ } return false; }
     var S = (window.sarState = window.sarState || {});
-    harvestAnswers(S);
-    var qs = getQuestionsSync();
+
+    // Helpers to pick best value from possible keys (for peer/user fields)
+    function pick(obj, keys){
+      if (!obj) return '';
+      for (var i=0;i<keys.length;i++){
+        var v = obj[keys[i]];
+        if (v !== undefined && v !== null && String(v).trim() !== '') return String(v);
+      }
+      return '';
+    }
+
+    // Answers: DOM -> localStorage fallback
+    (function harvestAnswers(){
+      try {
+        var picked = document.querySelectorAll('.q-item input[type="radio"]:checked');
+        picked.forEach(function(inp){
+          var wrap = inp.closest('.q-item'); if (!wrap) return;
+          var qid = wrap.getAttribute('data-qid'); var v = parseInt(inp.value,10);
+          if (!S.answers) S.answers = {};
+          if (qid && v>=1 && v<=5) S.answers[qid] = v;
+        });
+      } catch(_){}
+      if (!S.answers || Object.keys(S.answers).length===0){
+        try {
+          var saved = localStorage.getItem('sarState');
+          if (saved){
+            var tmp = JSON.parse(saved);
+            if (tmp && tmp.answers) S.answers = tmp.answers;
+            if (tmp && tmp.user && !S.user) S.user = tmp.user;
+            if (tmp && tmp.peer && !S.peer) S.peer = tmp.peer;
+          }
+        } catch(_){}
+      }
+      S.answers = S.answers || {};
+    })();
+
+    // Questions: embedded JSON or cached
+    var qs = (function(){
+      if (S.questions && Array.isArray(S.questions) && S.questions.length) return S.questions;
+      var node = document.getElementById('embeddedQuestions');
+      if (node && node.textContent){
+        try { var arr = JSON.parse(node.textContent); if (Array.isArray(arr)) { S.questions = arr; return arr; } } catch(_){}
+      }
+      return [];
+    })();
     var A = S.answers || {};
+
     // Weighted score
     var totalW=0, earned=0;
     for (var i=0;i<qs.length;i++){
-      var w = (typeof qs[i].weight==='number' && isFinite(qs[i].weight)) ? qs[i].weight : 1;
+      var wNum = (typeof qs[i].weight==='number' && isFinite(qs[i].weight)) ? qs[i].weight : 1;
       var v = parseInt(A[qs[i].id],10);
-      totalW += w;
-      if (v>=1 && v<=5) earned += v*w;
+      totalW += wNum;
+      if (v>=1 && v<=5) earned += v*wNum;
     }
     var pct = totalW>0 ? Math.round((earned/(totalW*5))*100) : 0;
 
+    // Doc & layout constants
     var doc = new JS({unit:'pt', format:'a4'});
     var x=42, y=56, line=16;
+    var maxWidth = 370, colResp = x + maxWidth + 14, colW = x + maxWidth + 70;
+
     function add(txt,b){ doc.setFont('helvetica', b?'bold':'normal'); doc.setFontSize(11); doc.text(String(txt), x, y); y += line; }
+    function addAt(txt, xx, bold){ doc.setFont('helvetica', bold?'bold':'normal'); doc.setFontSize(11); doc.text(String(txt), xx, y); }
     function gap(px){ y += (px||8); }
 
+    // Title
     doc.setFont('helvetica','bold'); doc.setFontSize(16);
     doc.text('BED SELF-ASSESSMENT RESULT', x, y); y += 24;
-    doc.setFont('helvetica','normal'); doc.setFontSize(10);
-    doc.text('Generated: ' + new Date().toLocaleString(), x, y); y += 18;
 
+    // (1) Self-assessment date: Day, dd mmm yyyy
+    var d = new Date();
+    var days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    var dateLine = 'Self-assessment date: ' + days[d.getDay()] + ', ' + String(d.getDate()).padStart(2,'0') + ' ' + months[d.getMonth()] + ' ' + d.getFullYear();
+    doc.setFont('helvetica','normal'); doc.setFontSize(10);
+    doc.text(dateLine, x, y); 
+    // (2) blank line after date
+    y += 18; gap(8);
+
+    // Team Member
     add('TEAM MEMBER', true);
-    add('Name: ' + (S.user && S.user.nickname || '-'));
-    add('BED Hotel: ' + (S.user && S.user.hotel || '-'));
-    add('Email address: ' + (S.user && S.user.email || '-'));
+    add('Name: ' + (pick(S.user, ['nickname','name','fullName']) || '-'));
+    add('BED Hotel: ' + (pick(S.user, ['hotel','bedHotel','team']) || '-'));
+    add('Email address: ' + (pick(S.user, ['email','mail']) || '-'));
     gap(8);
 
+    // (3) Peer Reviewer
     add('PEER REVIEWER', true);
-    add('Name: ' + (S.peer && S.peer.name || '-'));
-    add('BED Hotel: ' + (S.peer && S.peer.hotel || '-'));
-    add('Email address: ' + (S.peer && S.peer.email || '-'));
+    add('Name: ' + (pick(S.peer, ['name','nickname','fullName']) || '-'));
+    add('BED Hotel: ' + (pick(S.peer, ['hotel','bedHotel','team']) || '-'));
+    add('Email address: ' + (pick(S.peer, ['email','mail']) || '-'));
     gap(10);
 
+    // Assessment Score
     add('ASSESSMENT SCORE', true);
+    // (4) blank line after header
+    gap(10);
     add('YOUR SCORE IS ' + pct + '%', true);
-    add(earned.toFixed(1) + ' / ' + (totalW*5).toFixed(1));
+    // (5) points: '(points) out of (total points)', no decimals
+    var points = Math.round(earned);
+    var totalPts = Math.round(totalW*5);
+    add(points + ' out of ' + totalPts);
     gap(10);
 
-    add('Statement    Answer  Weight', true);
+    // Headers row
+    add('Statement', true);
+    // (8 + 9) Response/Weight headers aligned with values
+    var oldY = y;
+    addAt('Response', colResp, true);
+    addAt('Weight', colW, true);
+    y = oldY; gap(8);
+
+    // Items
     for (var j=0;j<qs.length;j++){
       var st = (qs[j].statement || ('Statement ' + (j+1)));
-      var sub = qs[j].subtext ? (' — ' + qs[j].subtext) : '';
-      var v = (A[qs[j].id] != null ? String(A[qs[j].id]) : '-');
-      var w = (typeof qs[j].weight === 'number' && isFinite(qs[j].weight)) ? qs[j].weight : 1;
-      var text = (j+1) + ') ' + st + sub;
+      var sub = qs[j].subtext ? String(qs[j].subtext) : '';
+      var vStr = (A[qs[j].id] != null ? String(A[qs[j].id]) : '-');
+      var wNum = (typeof qs[j].weight==='number' && isFinite(qs[j].weight)) ? qs[j].weight : 1;
+      var wStr = wNum.toFixed(1); // (10) one decimal
+
+      // (6) remove extra numbering: do NOT prefix with j+1
+      // (7) subtext on next line, aligned with statement
+
+      // wrap statement
       doc.setFont('helvetica','normal'); doc.setFontSize(11);
-      var maxWidth = 370;
-      var lines = doc.splitTextToSize(text, maxWidth);
+      var lines = doc.splitTextToSize(st, maxWidth);
       for (var k=0;k<lines.length;k++){
         doc.text(lines[k], x, y);
-        if (k===0){ doc.text(String(v).padStart(2,' '), x+maxWidth+14, y); doc.text(String(w), x+maxWidth+70, y); }
+        if (k===0){ 
+          doc.text(vStr, colResp, y); 
+          doc.text(wStr, colW, y); 
+        }
         y += line;
         if (y > 780){ doc.addPage(); y = 56; }
       }
+      if (sub){
+        var subLines = doc.splitTextToSize(sub, maxWidth);
+        for (var sIdx=0; sIdx<subLines.length; sIdx++){
+          doc.text(subLines[sIdx], x, y);
+          y += line;
+          if (y > 780){ doc.addPage(); y = 56; }
+        }
+      }
     }
 
-    var namePart = String((S.user && S.user.nickname) || 'User').replace(/\s+/g,'_');
-    var fname = 'BED_Assessment_' + namePart + '_' + fmtStamp(new Date()) + '.pdf';
+    // Filename
+    var namePart = String(pick(S.user, ['nickname','name','fullName']) || 'User').replace(/\s+/g,'_');
+    var ts = (function(d){function p(n){return String(n).padStart(2,'0');} return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'_'+p(d.getHours())+'-'+p(d.getMinutes())+'-'+p(d.getSeconds());})(new Date());
+    var fname = 'BED_Assessment_' + namePart + '_' + ts + '.pdf';
     try {
-      doc.save(fname); // synchronous -> preserves user gesture
+      doc.save(fname);
       setTimeout(function(){ try { openPdfDone(); } catch(_){ } }, 120);
     } catch(e){
       try { alert('PDF save failed: ' + e); } catch(_){ }
@@ -1602,7 +1692,7 @@ ok.onclick = function(){
     }
     return true;
   }
-  // One-download-per-click guard + wiring
+  // One-download-per-click guard// One-download-per-click guard + wiring
   (function(){
     var firing = false;
     document.addEventListener('click', function(e){
