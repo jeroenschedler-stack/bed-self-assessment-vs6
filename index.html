@@ -269,6 +269,31 @@ document.addEventListener('DOMContentLoaded', function(){
   ['pointerup','mouseleave','touchend','touchcancel','blur'].forEach(ev => pdfBtn.addEventListener(ev, rem));
 });
 
+
+// Global delegation so the PDF button turns blue even if rendered later
+(function(){
+  function isPdfBtn(t){ return t && (t.id === 'finishPDF' || (t.closest && t.closest('#finishPDF'))); }
+  document.addEventListener('pointerdown', function(e){
+    const t = e.target;
+    const btn = isPdfBtn(t) ? (t.id==='finishPDF'?t:t.closest('#finishPDF')) : null;
+    if (!btn) return;
+    btn.classList.add('active');
+    btn.style.setProperty('background-color','#1E90FF','important');
+    btn.style.setProperty('border-color','#1E90FF','important');
+    btn.style.setProperty('color','#ffffff','important');
+  }, true);
+  function clear(){ 
+    const btn = document.getElementById('finishPDF'); 
+    if (!btn) return;
+    btn.classList.remove('active');
+    btn.style.removeProperty('background-color');
+    btn.style.removeProperty('border-color');
+    btn.style.removeProperty('color');
+  }
+  ['pointerup','pointercancel','mouseleave','blur','touchend','touchcancel'].forEach(ev=>{
+    document.addEventListener(ev, clear, true);
+  });
+})();
 </script>
 <script>
   // === CONFIGURE THESE THREE VALUES IN GITHUB ===
@@ -826,6 +851,8 @@ function downloadSarResults(){
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
+      // Open success modal before Android can switch context
+      if (typeof openPdfDone === 'function') { try { openPdfDone(); } catch(_){} }
   a.href = url;
   const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
   a.download = `BED-SAR-Results-${stamp}.csv`;
@@ -1267,7 +1294,23 @@ function addLine(text, opts={bold:false, size:12}) {
     const qs = Array.isArray(S.questions) ? S.questions : [];
     const A = S.answers || {};
 
-    // Weighted totals
+    
+    // Ensure questions exist locally even if helper functions are out of scope
+    let qs = Array.isArray(S.questions) ? S.questions : [];
+    if (!qs || !qs.length) {
+      try {
+        const res = await fetch('./questions.json', {cache:'no-store'});
+        const data = await res.json();
+        if (Array.isArray(data)) { 
+          qs = data; 
+          if (S) S.questions = qs; 
+          if (!window.sarState) window.sarState = S;
+        }
+      } catch(_) {}
+    }
+    // Alias to keep existing code working
+    // (downstream code expects 'qs' to exist)
+// Weighted totals
     let weightedScore = 0, weightedMax = 0;
     for (const q of qs) {
       const w = (typeof q.weight === "number" && isFinite(q.weight)) ? q.weight : 1.0;
@@ -1352,6 +1395,8 @@ function addLine(text, opts={bold:false, size:12}) {
       const blob = new Blob([ab], {type:'application/octet-stream'});
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
+      // Open success modal before Android can switch context
+      if (typeof openPdfDone === 'function') { try { openPdfDone(); } catch(_){} }
       a.href = url;
       a.download = fname;
       document.body.appendChild(a);
