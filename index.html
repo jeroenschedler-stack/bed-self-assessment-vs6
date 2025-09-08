@@ -175,7 +175,27 @@ p{color:#434343;line-height:1.6;}
 
 </style>
 <!-- EmailJS SDK (Option 2: automatic email sending) -->
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js">
+  // === PDF Success Modal helpers ===
+  function openPdfDone() {
+    const mask = document.getElementById('pdfDoneMask');
+    const modal = document.getElementById('pdfDoneModal');
+    if (mask) mask.style.display = 'block';
+    if (modal) modal.style.display = 'block';
+    const ok = document.getElementById('pdfDoneOK');
+    if (ok) {
+      ok.onclick = closePdfDone;
+      ok.focus();
+    }
+  }
+  function closePdfDone() {
+    const mask = document.getElementById('pdfDoneMask');
+    const modal = document.getElementById('pdfDoneModal');
+    if (mask) mask.style.display = 'none';
+    if (modal) modal.style.display = 'none';
+  }
+
+</script>
 <script>
   // === CONFIGURE THESE THREE VALUES IN GITHUB ===
   window.EMAILJS_PUBLIC_KEY  = 'REPLACE_WITH_YOUR_PUBLIC_KEY';
@@ -1215,6 +1235,11 @@ ok.onclick = function(){
 
     // Save
     doc.save(fname);
+  
+    
+    // Show success modal
+    if (typeof openPdfDone === 'function') { openPdfDone(); }
+return true;
   }
 
   function waitFor(cond, timeoutMs=1500, interval=50){
@@ -1270,5 +1295,20 @@ ok.onclick = function(){
   new MutationObserver(bindDownload).observe(document.documentElement, {childList:true, subtree:true});
 })();
 </script>
+
+  <!-- PDF Success Modal (mirrors 24-month modal styling) -->
+  <div id="pdfDoneMask" class="modal-mask" style="display:none;"></div>
+  <div id="pdfDoneModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="pdfDoneTitle" style="display:none;">
+    <div class="modal-header">
+      <h3 id="pdfDoneTitle">Done! Your test results are ready.</h3>
+    </div>
+    <div class="modal-body">
+      <p>Test results downloaded.</p>
+    </div>
+    <div class="modal-footer">
+      <button id="pdfDoneOK" class="btn btn-primary" type="button">OK</button>
+    </div>
+  </div>
+
 </body>
 </html>
