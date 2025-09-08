@@ -411,6 +411,23 @@ function closePdfDone(){
   if(m) m.style.display = 'none';
 }
 
+
+  // Harvest answers from DOM as a fallback (works even on the completion page if questions are still in DOM)
+  function harvestAnswersFromDOM(state){
+    try{
+      const map = state.answers || (state.answers = {});
+      const nodes = document.querySelectorAll('.q-item input[type="radio"]:checked');
+      nodes.forEach(inp => {
+        const wrap = inp.closest('.q-item');
+        if (!wrap) return;
+        const qid = wrap.getAttribute('data-qid');
+        const v = parseInt(inp.value, 10);
+        if (qid && v>=1 && v<=5) { map[qid] = v; }
+      });
+      return map;
+    }catch(_){ return state.answers || {}; }
+  }
+
 </script>
 <script>
   // === CONFIGURE THESE THREE VALUES IN GITHUB ===
@@ -976,8 +993,7 @@ function downloadSarResults(){
   const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
   a.download = `BED-SAR-Results-${stamp}.csv`;
   document.body.appendChild(a);
-  \1
-      // Show success popup after triggering download
+        // Show success popup after triggering download
       if (typeof openPdfDone === 'function') { setTimeout(openPdfDone, 120); }
 URL.revokeObjectURL(url);
   a.remove();
@@ -1417,7 +1433,10 @@ function addLine(text, opts={bold:false, size:12}) {
 
     
     
-    // Recover answers from localStorage if missing
+    
+    // Fallback: rebuild answers by scanning the DOM if missing
+    try { if (!A || Object.keys(A).length === 0) { harvestAnswersFromDOM(S); } } catch(_) {}
+// Recover answers from localStorage if missing
     try {
       if ((!A || Object.keys(A).length === 0) && window.localStorage) {
         const saved = localStorage.getItem('sarState');
