@@ -175,7 +175,41 @@ p{color:#434343;line-height:1.6;}
 
 </style>
 <!-- EmailJS SDK (Option 2: automatic email sending) -->
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js">
+// === POPUP FIX: single download only + suppress legacy alert ===
+(function(){
+  // 1) Swallow the old alert that says "PDF download failed. Please try the Print option."
+  try {
+    const _oldAlert = window.alert;
+    window.alert = function(msg){
+      try {
+        if (typeof msg === 'string' && msg.toLowerCase().includes('pdf download failed')) {
+          // ignore the outdated message
+          return;
+        }
+      } catch (_) {}
+      return _oldAlert.apply(window, arguments);
+    };
+  } catch (_){}
+
+  // 2) Ensure exactly ONE download per click on #finishPDF (prevents Chrome's "download multiple files" prompt)
+  let firing = false;
+  document.addEventListener('click', function(e){
+    const t = e.target;
+    const btn = (t && (t.id === 'finishPDF' ? t : (t.closest && t.closest('#finishPDF')))) || null;
+    if (!btn) return;
+    if (firing) { e.preventDefault(); e.stopImmediatePropagation(); e.stopPropagation(); return; }
+    // Trigger our synchronous save immediately to keep user-gesture
+    firing = true;
+    try { if (typeof window.savePdfNow === 'function') window.savePdfNow(); } catch(_){}
+    // Stop other handlers from also attempting a download
+    try { e.preventDefault(); e.stopImmediatePropagation(); e.stopPropagation(); } catch(_){}
+    // Reset after a brief moment
+    setTimeout(()=>{ firing = false; }, 600);
+  }, true);
+})();
+
+</script>
 <script>
   // === CONFIGURE THESE THREE VALUES IN GITHUB ===
   window.EMAILJS_PUBLIC_KEY  = 'REPLACE_WITH_YOUR_PUBLIC_KEY';
