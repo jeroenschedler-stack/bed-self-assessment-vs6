@@ -173,359 +173,9 @@ p{color:#434343;line-height:1.6;}
 /* Lock welcome page bottom spacing: remove one gap between scale and actions (50% reduction) */
 .sar-page[data-step="welcome"] .sar-scale + .sar-gap-3 { display:none !important; }
 
-
-/* PDF button active feedback */
-#finishPDF.sar-btn.active { 
-  background-color: #1E90FF !important; 
-  border-color: #1E90FF !important; 
-  color: #ffffff !important;
-}
-
-
-/* Strong press/active styles for the PDF button */
-#finishPDF.sar-btn:active,
-#finishPDF.sar-btn.active,
-#finishPDF.sar-btn.is-pressed {
-  background-color: #1E90FF !important;
-  border-color: #1E90FF !important;
-  color: #ffffff !important;
-}
-
-
-/* Ensure custom modal overlays everything */
-.modal-mask { position: fixed !important; inset: 0 !important; background: rgba(0,0,0,0.45) !important; z-index: 99998 !important; }
-.modal { position: fixed !important; left: 50% !important; top: 30% !important; transform: translateX(-50%) !important; background: #fff !important; max-width: 520px !important; width: 88% !important; border-radius: 12px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.25) !important; z-index: 99999 !important; padding: 16px 18px !important; }
-.modal-footer { text-align: right; }
-
-
-/* STEP‑1C: Force the PDF button to appear blue whenever it exists */
-#finishPDF, 
-#finishPDF.sar-btn, 
-button#finishPDF.sar-btn {
-  background-color: #1E90FF !important;
-  border-color: #1E90FF !important;
-  color: #ffffff !important;
-}
-
-
-/* Success modal styling */
-.modal-mask { position: fixed !important; inset: 0 !important; background: rgba(0,0,0,0.45) !important; z-index: 99998 !important; }
-.modal { position: fixed !important; left: 50% !important; top: 30% !important; transform: translateX(-50%) !important; background: #fff !important; max-width: 520px !important; width: 88% !important; border-radius: 12px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.25) !important; z-index: 99999 !important; padding: 16px 18px !important; }
-.modal-footer { text-align: right; }
-
 </style>
 <!-- EmailJS SDK (Option 2: automatic email sending) -->
-<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js">
-  // === PDF Success Modal helpers ===
-  function openPdfDone() {
-    const mask = document.getElementById('pdfDoneMask');
-    const modal = document.getElementById('pdfDoneModal');
-    if (mask) mask.style.display = 'block';
-    if (modal) modal.style.display = 'block';
-    const ok = document.getElementById('pdfDoneOK');
-    if (ok) {
-      ok.onclick = closePdfDone;
-      ok.focus();
-    }
-  }
-  function closePdfDone() {
-    const mask = document.getElementById('pdfDoneMask');
-    const modal = document.getElementById('pdfDoneModal');
-    if (mask) mask.style.display = 'none';
-    if (modal) modal.style.display = 'none';
-  }
-
-
-// Visual feedback for PDF button
-(function(){
-  const pdfBtn = document.getElementById('finishPDF');
-  if (pdfBtn) {
-    const add = () => pdfBtn.classList.add('active');
-    const rem = () => pdfBtn.classList.remove('active');
-    pdfBtn.addEventListener('pointerdown', add);
-    pdfBtn.addEventListener('pointerup', rem);
-    pdfBtn.addEventListener('pointerleave', rem);
-    pdfBtn.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ add(); setTimeout(rem,150);} });
-  }
-})();
-
-
-// Delegated press visual for PDF button
-document.addEventListener('pointerdown', function(e){
-  const t = e.target;
-  if (t && t.id === 'finishPDF') { t.classList.add('is-pressed'); }
-}, true);
-document.addEventListener('pointerup', function(e){
-  const t = document.getElementById('finishPDF');
-  if (t) t.classList.remove('is-pressed');
-}, true);
-
-
-// Strong, device-agnostic blue-press feedback for the PDF button
-document.addEventListener('DOMContentLoaded', function(){
-  const pdfBtn = document.getElementById('finishPDF');
-  if (!pdfBtn) return;
-  const add = () => {
-    pdfBtn.classList.add('active');
-    try {
-      pdfBtn.style.setProperty('background-color', '#1E90FF', 'important');
-      pdfBtn.style.setProperty('border-color', '#1E90FF', 'important');
-      pdfBtn.style.setProperty('color', '#ffffff', 'important');
-    } catch(_){}
-  };
-  const rem = () => {
-    pdfBtn.classList.remove('active');
-    try {
-      pdfBtn.style.removeProperty('background-color');
-      pdfBtn.style.removeProperty('border-color');
-      pdfBtn.style.removeProperty('color');
-    } catch(_){}
-  };
-  ['pointerdown','mousedown','touchstart'].forEach(ev => pdfBtn.addEventListener(ev, add, {passive:true}));
-  ['pointerup','mouseleave','touchend','touchcancel','blur'].forEach(ev => pdfBtn.addEventListener(ev, rem));
-});
-
-
-// Global delegation so the PDF button turns blue even if rendered later
-(function(){
-  function isPdfBtn(t){ return t && (t.id === 'finishPDF' || (t.closest && t.closest('#finishPDF'))); }
-  document.addEventListener('pointerdown', function(e){
-    const t = e.target;
-    const btn = isPdfBtn(t) ? (t.id==='finishPDF'?t:t.closest('#finishPDF')) : null;
-    if (!btn) return;
-    btn.classList.add('active');
-    btn.style.setProperty('background-color','#1E90FF','important');
-    btn.style.setProperty('border-color','#1E90FF','important');
-    btn.style.setProperty('color','#ffffff','important');
-  }, true);
-  function clear(){ 
-    const btn = document.getElementById('finishPDF'); 
-    if (!btn) return;
-    btn.classList.remove('active');
-    btn.style.removeProperty('background-color');
-    btn.style.removeProperty('border-color');
-    btn.style.removeProperty('color');
-  }
-  ['pointerup','pointercancel','mouseleave','blur','touchend','touchcancel'].forEach(ev=>{
-    document.addEventListener(ev, clear, true);
-  });
-})();
-
-// Lightweight toast for success confirmation
-function showPdfToast(msg="Done! Your test results are ready.") {
-  try {
-    let t = document.getElementById('pdfToast');
-    if (!t) {
-      t = document.createElement('div');
-      t.id = 'pdfToast';
-      t.style.position = 'fixed';
-      t.style.left = '50%';
-      t.style.bottom = '24px';
-      t.style.transform = 'translateX(-50%)';
-      t.style.background = 'rgba(0,0,0,0.85)';
-      t.style.color = '#fff';
-      t.style.padding = '10px 14px';
-      t.style.fontSize = '14px';
-      t.style.borderRadius = '10px';
-      t.style.zIndex = '100000';
-      document.body.appendChild(t);
-    }
-    t.textContent = msg;
-    t.style.opacity = '1';
-    t.style.display = 'block';
-    setTimeout(()=>{ t.style.transition='opacity 300ms'; t.style.opacity='0'; }, 1600);
-    setTimeout(()=>{ t.style.display='none'; t.style.transition=''; }, 2200);
-  } catch(_) {}
-}
-
-
-// --- STEP 1: Force the PDF button to turn blue on press, no matter when it renders ---
-(function(){
-  const BLUE = '#1E90FF';
-  function wire(btn){
-    if (!btn || btn.__wiredBlue) return;
-    btn.__wiredBlue = true;
-    const press = ()=>{
-      try{
-        btn.style.setProperty('background-color', BLUE, 'important');
-        btn.style.setProperty('border-color', BLUE, 'important');
-        btn.style.setProperty('color', '#ffffff', 'important');
-        setTimeout(()=>{
-          btn.style.removeProperty('background-color');
-          btn.style.removeProperty('border-color');
-          btn.style.removeProperty('color');
-        }, 220);
-      }catch(_){}
-    };
-    ['pointerdown','mousedown','touchstart','keydown'].forEach(ev=>{
-      btn.addEventListener(ev, (e)=>{
-        if (ev==='keydown' && !(e.key==='Enter' || e.key===' ')) return;
-        press();
-      }, {passive:true});
-    });
-  }
-  // Wire immediately if present
-  wire(document.getElementById('finishPDF'));
-  // Watch for dynamic render
-  const mo = new MutationObserver(()=>{
-    const b = document.getElementById('finishPDF');
-    if (b) wire(b);
-  });
-  mo.observe(document.documentElement, {subtree:true, childList:true});
-})();
-
-
-// --- STEP 1B: Keep the PDF button blue whenever the completion page is visible ---
-(function(){
-  const BLUE = '#1E90FF';
-  function persistBlue(btn){
-    if (!btn) return;
-    btn.style.setProperty('background-color', BLUE, 'important');
-    btn.style.setProperty('border-color', BLUE, 'important');
-    btn.style.setProperty('color', '#ffffff', 'important');
-  }
-  // Apply immediately if the button is already there
-  persistBlue(document.getElementById('finishPDF'));
-  // Watch for the button to appear or re-render
-  const mo = new MutationObserver(()=>{
-    const b = document.getElementById('finishPDF');
-    if (b) persistBlue(b);
-  });
-  mo.observe(document.documentElement, {subtree:true, childList:true});
-})();
-
-
-// PDF success modal helpers
-function openPdfDone(){
-  try{
-    const m = document.getElementById('pdfDoneModal');
-    const k = document.getElementById('pdfDoneMask');
-    if(k) k.style.display = 'block';
-    if(m) { m.style.display = 'block'; const ok = document.getElementById('pdfDoneOK'); if (ok) { ok.onclick = closePdfDone; ok.focus(); } }
-  }catch(e){ console.warn(e); }
-}
-function closePdfDone(){
-  const m = document.getElementById('pdfDoneModal');
-  const k = document.getElementById('pdfDoneMask');
-  if(k) k.style.display = 'none';
-  if(m) m.style.display = 'none';
-}
-
-
-  // Harvest answers from DOM as a fallback (works even on the completion page if questions are still in DOM)
-  function harvestAnswersFromDOM(state){
-    try{
-      const map = state.answers || (state.answers = {});
-      const nodes = document.querySelectorAll('.q-item input[type="radio"]:checked');
-      nodes.forEach(inp => {
-        const wrap = inp.closest('.q-item');
-        if (!wrap) return;
-        const qid = wrap.getAttribute('data-qid');
-        const v = parseInt(inp.value, 10);
-        if (qid && v>=1 && v<=5) { map[qid] = v; }
-      });
-      return map;
-    }catch(_){ return state.answers || {}; }
-  }
-
-
-// === PDF RESCUE LAYER ===
-(function(){
-  // 0) Tiny toast for user feedback
-  function toast(msg){
-    try{
-      var t = document.getElementById('pdfRescueToast');
-      if(!t){
-        t = document.createElement('div');
-        t.id = 'pdfRescueToast';
-        t.style.cssText = 'position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(0,0,0,.85);color:#fff;padding:10px 14px;border-radius:10px;z-index:2147483647;opacity:0;transition:opacity .25s;';
-        document.body.appendChild(t);
-      }
-      t.textContent = msg || 'Preparing PDF…';
-      t.style.opacity = '1';
-      setTimeout(function(){ t.style.opacity = '0'; }, 1200);
-    }catch(_){}
-  }
-
-  // 1) Ensure jsPDF exists (load from CDN if needed)
-  async function ensureJsPDF(){
-    if (window.jspdf && window.jspdf.jsPDF) return true;
-    await new Promise(function(resolve, reject){
-      var s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
-      s.onload = resolve; s.onerror = reject;
-      document.head.appendChild(s);
-    });
-    return !!(window.jspdf && window.jspdf.jsPDF);
-  }
-
-  // 2) Fallback generator (used only if your generatePdfFromState is missing/failing)
-  async function fallbackGenerateAndSave(){
-    const ok = await ensureJsPDF();
-    if(!ok) throw new Error('jsPDF failed to load');
-    const jsPDF = window.jspdf.jsPDF;
-    const doc = new jsPDF({unit:'pt', format:'a4'});
-    const x=42, y=48;
-    doc.setFont('helvetica','bold'); doc.setFontSize(16);
-    doc.text('BED Self-Assessment — Report', x, y);
-    // Save via Blob -> <a download>
-    const fname = 'BED_Assessment.pdf';
-    try {
-      const ab = doc.output('arraybuffer');
-      const blob = new Blob([ab], {type:'application/pdf'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url; a.download = fname;
-      (document.body||document.documentElement).appendChild(a);
-      a.click(); a.remove();
-      setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
-    } catch(e) {
-      try { doc.save(fname); } catch(_) { throw e; }
-    }
-    return true;
-  }
-
-  // 3) Unified download handler
-  async function doPdfDownload(){
-    toast('Preparing PDF…');
-    try {
-      // Prefer your full generator
-      if (typeof generatePdfFromState === 'function') {
-        // Make sure jsPDF is available for your generator too
-        await ensureJsPDF();
-        const ok = await generatePdfFromState();
-        if (!ok) throw new Error('Generator returned falsy');
-      } else {
-        await fallbackGenerateAndSave();
-      }
-      toast('Download started.');
-    } catch (err) {
-      console.error('PDF download failed:', err);
-      try { alert('PDF download failed: ' + (err && err.message || err)); } catch(_){}
-    }
-  }
-
-  // 4) Hard-bind to the button: inline + capturing listener
-  function wire(btn){
-    if(!btn || btn.__pdfRescue) return;
-    btn.__pdfRescue = true;
-    try { btn.setAttribute('onclick', 'try{window.__doPdfDownload&&window.__doPdfDownload()}catch(e){}'); } catch(_){}
-    btn.addEventListener('click', function(ev){
-      ev.preventDefault(); ev.stopPropagation();
-      doPdfDownload();
-    }, true);
-  }
-
-  // Expose for inline handler
-  window.__doPdfDownload = doPdfDownload;
-
-  // Wire now and observe future DOM
-  wire(document.getElementById('finishPDF'));
-  var mo = new MutationObserver(function(){ wire(document.getElementById('finishPDF')); });
-  mo.observe(document.documentElement, {subtree:true, childList:true});
-})();
-
-</script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 <script>
   // === CONFIGURE THESE THREE VALUES IN GITHUB ===
   window.EMAILJS_PUBLIC_KEY  = 'REPLACE_WITH_YOUR_PUBLIC_KEY';
@@ -1082,17 +732,12 @@ function downloadSarResults(){
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-      // Open success modal before Android can switch context
-      try { showPdfToast(); } catch(_) {}
-      if (typeof openPdfDone === 'function') { try { openPdfDone(); } catch(_){} }
-      if (typeof openPdfDone === 'function') { try { openPdfDone(); } catch(_){} }
   a.href = url;
   const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
   a.download = `BED-SAR-Results-${stamp}.csv`;
   document.body.appendChild(a);
-        // Show success popup after triggering download
-      if (typeof openPdfDone === 'function') { setTimeout(openPdfDone, 120); }
-URL.revokeObjectURL(url);
+  a.click();
+  URL.revokeObjectURL(url);
   a.remove();
 }
 
@@ -1472,15 +1117,7 @@ ok.onclick = function(){
     const lineH = 16;
     let x = margin.l, y = margin.t;
 
-    
-    // Ensure we have the latest state and questions
-    const S0 = window.sarState || {};
-    try {
-      if (!Array.isArray(S0.questions) || S0.questions.length === 0) {
-        if (typeof loadQuestions === 'function') { await loadQuestions(); }
-      }
-    } catch(_) {}
-function addLine(text, opts={bold:false, size:12}) {
+    function addLine(text, opts={bold:false, size:12}) {
       doc.setFont("helvetica", opts.bold ? "bold" : "normal");
       doc.setFontSize(opts.size || 12);
       const maxWidth = pageW - margin.l - margin.r;
@@ -1528,63 +1165,7 @@ function addLine(text, opts={bold:false, size:12}) {
     const qs = Array.isArray(S.questions) ? S.questions : [];
     const A = S.answers || {};
 
-    
-    
-    
-    // Fallback: rebuild answers by scanning the DOM if missing
-    try { if (!A || Object.keys(A).length === 0) { harvestAnswersFromDOM(S); } } catch(_) {}
-// Recover answers from localStorage if missing
-    try {
-      if ((!A || Object.keys(A).length === 0) && window.localStorage) {
-        const saved = localStorage.getItem('sarState');
-        if (saved) {
-          const tmp = JSON.parse(saved);
-          if (tmp && tmp.answers) { S.answers = tmp.answers; }
-          if (tmp && tmp.user && !S.user) { S.user = tmp.user; }
-        }
-      }
-    } catch(_) {}
-
-    // Ensure questions exist: prefer embedded JSON, then fetch (?v=1, plain)
-    let qs = Array.isArray(S.questions) ? S.questions : [];
-    try {
-      if (!qs || !qs.length) {
-        const node = document.getElementById('embeddedQuestions');
-        if (node && node.textContent) {
-          qs = JSON.parse(node.textContent);
-          S.questions = qs;
-        }
-      }
-      if ((!qs || !qs.length) && typeof fetch === 'function') {
-        try {
-          const r1 = await fetch('./questions.json?v=1', {cache:'no-store'});
-          if (r1.ok) { qs = await r1.json(); }
-        } catch(_){}
-        if (!qs || !qs.length) {
-          try {
-            const r2 = await fetch('./questions.json', {cache:'no-store'});
-            if (r2.ok) { qs = await r2.json(); }
-          } catch(_){}
-        }
-        if (Array.isArray(qs)) S.questions = qs;
-      }
-    } catch(_) {}
-// Ensure questions exist locally even if helper functions are out of scope
-    let qs = Array.isArray(S.questions) ? S.questions : [];
-    if (!qs || !qs.length) {
-      try {
-        const res = await fetch('./questions.json', {cache:'no-store'});
-        const data = await res.json();
-        if (Array.isArray(data)) { 
-          qs = data; 
-          if (S) S.questions = qs; 
-          if (!window.sarState) window.sarState = S;
-        }
-      } catch(_) {}
-    }
-    // Alias to keep existing code working
-    // (downstream code expects 'qs' to exist)
-// Weighted totals
+    // Weighted totals
     let weightedScore = 0, weightedMax = 0;
     for (const q of qs) {
       const w = (typeof q.weight === "number" && isFinite(q.weight)) ? q.weight : 1.0;
@@ -1594,55 +1175,28 @@ function addLine(text, opts={bold:false, size:12}) {
     }
     const pct = weightedMax ? Math.round((weightedScore / weightedMax) * 100) : 0;
 
-    
-    // === Structured report ===
-
-    // Title
-    doc.setFont("helvetica", "bold"); doc.setFontSize(18);
-    doc.text("BED SELF-ASSESSMENT RESULT", x, y); y += 24;
+    // Header
+    doc.setFont("helvetica", "bold"); doc.setFontSize(16);
+    doc.text("BED Self-Assessment — Completed Report", x, y); y += 22;
 
     doc.setFont("helvetica", "normal"); doc.setFontSize(10);
     doc.text("Generated: " + new Date().toLocaleString(), x, y); y += 18;
 
-    // TEAM MEMBER
-    doc.setFont("helvetica", "bold"); doc.setFontSize(12);
-    doc.text("TEAM MEMBER", x, y); y += 16;
+    // Participant
+    addLine("Participant", {bold:true, size:12});
+    addLine(`User: ${user.nickname ?? "-"} (${user.email ?? "-"}) — ${user.hotel ?? "-"}`);
+    addLine(`Peer: ${peer.name ?? "-"} (${peer.email ?? "-"}) — ${peer.hotel ?? "-"}`);
+    addGap(6);
 
-    doc.setFont("helvetica", "normal"); doc.setFontSize(11);
-    addLine("Name: " + String(user.nickname ?? "-"));
-    addLine("BED Hotel: " + String(user.hotel ?? "-"));
-    addLine("Email address: " + String(user.email ?? "-"));
-    addGap(8);
-
-    // PEER REVIEWER
-    doc.setFont("helvetica", "bold"); doc.setFontSize(12);
-    doc.text("PEER REVIEWER", x, y); y += 16;
-
-    doc.setFont("helvetica", "normal"); doc.setFontSize(11);
-    addLine("Name: " + String(peer.name ?? "-"));
-    addLine("BED Hotel: " + String(peer.hotel ?? "-"));
-    addLine("Email address: " + String(peer.email ?? "-"));
+    // Score
+    addLine("Score", {bold:true, size:12});
+    addLine(`${weightedScore.toFixed(1)} / ${weightedMax.toFixed(1)}  (${pct}%)`);
+    addLine("Note: Weighted scoring applied. High-importance statements influence the score more.");
     addGap(10);
-
-    // ASSESSMENT SCORE
-    const pctText = String(pct) + "%";
-    const band = (pct>=85) ? "Amazing" : (pct>=70) ? "Advanced" : (pct>=50) ? "Developing" : "Needs improvement";
-
-    doc.setFont("helvetica", "bold"); doc.setFontSize(12);
-    doc.text("ASSESSMENT SCORE", x, y); y += 16;
-
-    doc.setFont("helvetica", "bold"); doc.setFontSize(12);
-    doc.text("YOUR SCORE IS " + pctText, x, y); y += 16;
-
-    doc.setFont("helvetica", "normal"); doc.setFontSize(11);
-    doc.text(weightedScore.toFixed(1) + " / " + weightedMax.toFixed(1), x, y); y += 14;
-
-    doc.setFont("helvetica", "italic"); doc.setFontSize(11);
-    doc.text("(" + band + ")", x, y); y += 18;
 
     // Table header
     doc.setFont("helvetica", "bold"); doc.setFontSize(11);
-    addTableRow("Statement", "Answer 1-5", "Weight");
+    addTableRow("Statement", "Answer", "Weight");
     doc.setFont("helvetica", "normal"); doc.setFontSize(11);
 
     // Rows
@@ -1651,43 +1205,16 @@ function addLine(text, opts={bold:false, size:12}) {
       const sub = q.subtext ? (" — " + q.subtext) : "";
       const ans = (A[q.id] ?? "-");
       const w   = (typeof q.weight === "number" && isFinite(q.weight)) ? q.weight : 1.0;
-      addTableRow(`${i+1}) ${st}${sub}`, String(ans), String(w));
+      addTableRow(`${i+1}. ${st}${sub}`, String(ans), String(w));
     });
 
-    addGap(6);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(10);
-    addLine("Note: Weighted scoring is applied. High-importance statements influence the score more.");
-// File name
+    // File name
     const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g, "-");
     const nick = (user.nickname || "user").replace(/\s+/g, "_");
     const fname = `BED_Assessment_${nick}_${ts}.pdf`;
 
     // Save
-        // Direct Blob download for better mobile behavior
-    try {
-      const ab = doc.output('arraybuffer');
-      const blob = new Blob([ab], {type:'application/octet-stream'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      // Open success modal before Android can switch context
-      try { showPdfToast(); } catch(_) {}
-      if (typeof openPdfDone === 'function') { try { openPdfDone(); } catch(_){} }
-      if (typeof openPdfDone === 'function') { try { openPdfDone(); } catch(_){} }
-      a.href = url;
-      a.download = fname;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      setTimeout(()=>URL.revokeObjectURL(url), 2000);
-    } catch(err) {
-      console.error('PDF save failed', err);
-    }
-    // Show success modal shortly after triggering download
-    try { showPdfToast(); } catch(_) {}
-    if (typeof openPdfDone === 'function') { requestAnimationFrame(()=>openPdfDone()); setTimeout(openPdfDone, 300); }
-    // Show success modal
-    if (typeof openPdfDone === 'function') { openPdfDone(); }
-return true;
+    doc.save(fname);
   }
 
   function waitFor(cond, timeoutMs=1500, interval=50){
@@ -1744,23 +1271,83 @@ return true;
 })();
 </script>
 
-  <!-- PDF Success Modal (mirrors 24-month modal styling) -->
-  <div id="pdfDoneMask" class="modal-mask" style="display:none;"></div>
-  <div id="pdfDoneModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="pdfDoneTitle" style="display:none;">
-    <div class="modal-header">
-      <h3 id="pdfDoneTitle">Done! Your test results are ready.</h3>
-    </div>
-    <div class="modal-body">
-      <p>Test results downloaded.</p>
-    </div>
-    <div class="modal-footer">
-      <button id="pdfDoneOK" class="btn btn-primary" type="button">OK</button>
-    </div>
-  </div>
-
-
-<!-- Embedded questions to avoid fetch issues -->
 <script id="embeddedQuestions" type="application/json">[{"id": "q1", "statement": "1. I reply to guests very quickly", "subtext": "I often check for messages and answer right away"}, {"id": "q2", "statement": "2. I make my replies warm and personal", "subtext": "I use their name and add helpful information"}, {"id": "q3", "statement": "3. I make a great first impression", "subtext": "I know that starts from the very first message"}, {"id": "q4", "statement": "4. I can see if a guest is stressed or relaxed", "subtext": "I adjust the way I check-in to the mood"}, {"id": "q5", "statement": "5. I ask questions before I ask passports", "subtext": "I welcome guests like friends"}, {"id": "q6", "statement": "6. I can check-in a guest in 60 seconds", "subtext": "I timed this three times with standard check-ins"}, {"id": "q7", "statement": "7. I check in groups differently than FIT", "subtext": "I usually check-in groups with the leader"}, {"id": "q8", "statement": "8. I don't tell guests that check-in time is 14:00", "subtext": "They can check-in as soon as the room is ready"}, {"id": "q9", "statement": "9. I don't show stress when there is a problem", "subtext": "I know that makes guests really worry"}, {"id": "q10", "statement": "10. I show genuine interest during check-out", "subtext": "I ask about their stay or next destination"}, {"id": "q11", "statement": "11. I make great last impressions", "subtext": "I walk them out and wait until their car has left"}, {"id": "q12", "statement": "12. I use names to connect with guests", "subtext": "When it feels right I tell my name and use theirs"}, {"id": "q13", "statement": "13. I scan every guest every time", "subtext": "I don't look at a group but at each individual"}, {"id": "q14", "statement": "14. I am good at scanning", "subtext": "I see what people need before they ask"}, {"id": "q15", "statement": "15. I create unique surprises for guests", "subtext": "I do more than offering free things"}, {"id": "q16", "statement": "16. Music is an essential part of the vibe", "subtext": "I listen to make sure we play the right music"}, {"id": "q17", "statement": "17. I invite guests to share other BED facilities", "subtext": "I offer downtown coffee, bigger pool or breakfast"}, {"id": "q18", "statement": "18. its annoying when a room key doesn't work", "subtext": "I go up to make sure the new key works"}, {"id": "q19", "statement": "19. I talk with guests because I am interested", "subtext": "When I force myself it will not be real"}, {"id": "q20", "statement": "20. I often give my friends honest feedback", "subtext": "I’m happy to help them to grow"}, {"id": "q21", "statement": "21. My friends often give me honest feedback", "subtext": "I’m happy they help me to grow"}, {"id": "q22", "statement": "22. I can answer most questions about BED", "subtext": "I have visited the rooms in all our hotels"}, {"id": "q23", "statement": "23. I understand the meaning of \"showtime\"", "subtext": "The magic happens from 07:00-10:00"}, {"id": "q24", "statement": "24. I know the story of \"peeling the onion\"", "subtext": "I don't act. Usually I show my true self"}, {"id": "q25", "statement": "25. I never gossip. I signed “I Promise”", "subtext": "I don't talk bad when someone's not here"}, {"id": "q26", "statement": "26. I really understand that rules can be flexible", "subtext": "Without reasons many rules just disappear"}, {"id": "q27", "statement": "27. I am confident about my own judgment", "subtext": "I make decisions without asking permission"}, {"id": "q28", "statement": "28. I look after the rooms and public areas", "subtext": "I share responsibility for the whole hotel"}, {"id": "q29", "statement": "29. I look around when I arrive at the hotel", "subtext": "I share responsibility for the whole hotel"}, {"id": "q30", "statement": "30. I don't pass problems to others but act myself", "subtext": "I follow up later to make sure it's fixed"}, {"id": "q31", "statement": "31. I am not afraid of the CEO or my coach", "subtext": "I know I am allowed to make mistakes"}, {"id": "q32", "statement": "32. I have no manuals that show me what to do", "subtext": "That means I cannot do anything wrong"}]</script>
+
+<!-- CLEAN SYNCHRONOUS PDF INJECT -->
+<script>
+(function(){
+  function getJsPDF(){ try { return (window.jspdf && window.jspdf.jsPDF) ? window.jspdf.jsPDF : null; } catch(_) { return null; } }
+  function getQuestionsSync(){
+    try {
+      if (window.sarState && Array.isArray(window.sarState.questions) && window.sarState.questions.length) return window.sarState.questions;
+      const node = document.getElementById('embeddedQuestions');
+      if (node && node.textContent) {
+        const arr = JSON.parse(node.textContent);
+        if (Array.isArray(arr) && arr.length) {
+          window.sarState = window.sarState || {}; window.sarState.questions = arr; return arr;
+        }
+      }
+    } catch(_) {}
+    return [];
+  }
+  function getStateSync(){
+    const S = (window.sarState = window.sarState || {});
+    if (!S.answers || Object.keys(S.answers).length === 0) {
+      try {
+        document.querySelectorAll('.q-item input[type="radio"]:checked').forEach(inp => {
+          const wrap = inp.closest('.q-item'); if (!wrap) return;
+          const qid = wrap.getAttribute('data-qid'); const v = parseInt(inp.value, 10);
+          if (!S.answers) S.answers = {}; if (qid && v>=1 && v<=5) S.answers[qid] = v;
+        });
+      } catch(_){}
+      if (!S.answers || Object.keys(S.answers).length === 0) {
+        try {
+          const saved = localStorage.getItem('sarState');
+          if (saved) {
+            const tmp = JSON.parse(saved);
+            if (tmp && tmp.answers) S.answers = tmp.answers;
+            if (tmp && tmp.user && !S.user) S.user = tmp.user;
+            if (tmp && tmp.peer && !S.peer) S.peer = tmp.peer;
+          }
+        } catch(_){}
+      }
+    }
+    S.user = S.user || { nickname: '', email: '', hotel: '' };
+    S.peer = S.peer || { name: '', email: '', hotel: '' };
+    return S;
+  }
+  function savePdfNow(){
+    var JS = getJsPDF(); if (!JS) { try { alert('PDF library is not loaded.'); } catch(_){ } return false; }
+    var S  = getStateSync(); var qs = getQuestionsSync(); var A = S.answers || {};
+    var totalW = 0, earned = 0;
+    for (var i=0;i<qs.length;i++){ var w = (typeof qs[i].weight==='number'&&isFinite(qs[i].weight))?qs[i].weight:1; var v=parseInt(A[qs[i].id],10); totalW+=w; if(v>=1&&v<=5) earned+=v*w; }
+    var pct = totalW>0 ? Math.round((earned/(totalW*5))*100) : 0;
+    var JSClass = JS;
+    var doc = new JSClass({unit:'pt', format:'a4'});
+    var x=42, y=56, line=16;
+    function add(t,b){ doc.setFont('helvetica', b?'bold':'normal'); doc.setFontSize(11); doc.text(String(t), x, y); y+=line; }
+    function gap(px){ y += (px||8); }
+    doc.setFont('helvetica','bold'); doc.setFontSize(16); doc.text('BED SELF-ASSESSMENT RESULT', x, y); y+=24;
+    doc.setFont('helvetica','normal'); doc.setFontSize(10); doc.text('Generated: ' + new Date().toLocaleString(), x, y); y+=18;
+    add('TEAM MEMBER', true); add('Name: ' + (S.user.nickname||'-')); add('BED Hotel: ' + (S.user.hotel||'-')); add('Email address: ' + (S.user.email||'-')); gap(8);
+    add('PEER REVIEWER', true); add('Name: ' + (S.peer.name||'-')); add('BED Hotel: ' + (S.peer.hotel||'-')); add('Email address: ' + (S.peer.email||'-')); gap(10);
+    add('ASSESSMENT SCORE', true); add('YOUR SCORE IS ' + pct + '%', true); add(earned.toFixed(1) + ' / ' + (totalW*5).toFixed(1)); gap(10);
+    add('Statement    Answer  Weight', true);
+    for (var j=0;j<qs.length;j++){ var st=(qs[j].statement||('Statement '+(j+1))); var sub=qs[j].subtext?(' — '+qs[j].subtext):''; var v=(A[qs[j].id]!=null?String(A[qs[j].id]):'-'); var w=(typeof qs[j].weight==='number'&&isFinite(qs[j].weight))?qs[j].weight:1;
+      var text=(j+1)+') '+st+sub; doc.setFont('helvetica','normal'); doc.setFontSize(11);
+      var maxWidth=370; var lines=doc.splitTextToSize(text, maxWidth);
+      for (var k=0;k<lines.length;k++){ doc.text(lines[k], x, y); if(k===0){ doc.text(String(v).padStart(2,' '), x+maxWidth+14, y); doc.text(String(w), x+maxWidth+70, y); } y+=line; if(y>780){ doc.addPage(); y=56; } }
+    }
+    var fname = 'BED_Assessment_' + String((S.user.nickname||'')).replace(/\s+/g,'_') + '.pdf';
+    try { doc.save(fname); } catch(e){ try{ alert('PDF save failed: '+e); }catch(_){} return false; }
+    return true;
+  }
+  function wireFinish(){ var btn=document.getElementById('finishPDF'); if(!btn||btn.__wiredClean) return; btn.__wiredClean=true; btn.onclick=function(){ return savePdfNow(); }; }
+  document.addEventListener('DOMContentLoaded', wireFinish); document.addEventListener('readystatechange', wireFinish);
+  var mo = new MutationObserver(wireFinish); mo.observe(document.documentElement, {subtree:true, childList:true});
+  window.savePdfNow = savePdfNow;
+})();
+</script>
 
 </body>
 </html>
