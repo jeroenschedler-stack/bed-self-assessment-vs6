@@ -191,6 +191,12 @@ p{color:#434343;line-height:1.6;}
   color: #ffffff !important;
 }
 
+
+/* Ensure custom modal overlays everything */
+.modal-mask { position: fixed !important; inset: 0 !important; background: rgba(0,0,0,0.45) !important; z-index: 99998 !important; }
+.modal { position: fixed !important; left: 50% !important; top: 30% !important; transform: translateX(-50%) !important; background: #fff !important; max-width: 520px !important; width: 88% !important; border-radius: 12px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.25) !important; z-index: 99999 !important; padding: 16px 18px !important; }
+.modal-footer { text-align: right; }
+
 </style>
 <!-- EmailJS SDK (Option 2: automatic email sending) -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js">
@@ -237,6 +243,31 @@ document.addEventListener('pointerup', function(e){
   const t = document.getElementById('finishPDF');
   if (t) t.classList.remove('is-pressed');
 }, true);
+
+
+// Strong, device-agnostic blue-press feedback for the PDF button
+document.addEventListener('DOMContentLoaded', function(){
+  const pdfBtn = document.getElementById('finishPDF');
+  if (!pdfBtn) return;
+  const add = () => {
+    pdfBtn.classList.add('active');
+    try {
+      pdfBtn.style.setProperty('background-color', '#1E90FF', 'important');
+      pdfBtn.style.setProperty('border-color', '#1E90FF', 'important');
+      pdfBtn.style.setProperty('color', '#ffffff', 'important');
+    } catch(_){}
+  };
+  const rem = () => {
+    pdfBtn.classList.remove('active');
+    try {
+      pdfBtn.style.removeProperty('background-color');
+      pdfBtn.style.removeProperty('border-color');
+      pdfBtn.style.removeProperty('color');
+    } catch(_){}
+  };
+  ['pointerdown','mousedown','touchstart'].forEach(ev => pdfBtn.addEventListener(ev, add, {passive:true}));
+  ['pointerup','mouseleave','touchend','touchcancel','blur'].forEach(ev => pdfBtn.addEventListener(ev, rem));
+});
 
 </script>
 <script>
@@ -1246,31 +1277,55 @@ function addLine(text, opts={bold:false, size:12}) {
     }
     const pct = weightedMax ? Math.round((weightedScore / weightedMax) * 100) : 0;
 
-    // Header
-    doc.setFont("helvetica", "bold"); doc.setFontSize(16);
-    doc.text("BED Self-Assessment — Completed Report", x, y); y += 22;
+    
+    // === Structured report ===
+
+    // Title
+    doc.setFont("helvetica", "bold"); doc.setFontSize(18);
+    doc.text("BED SELF-ASSESSMENT RESULT", x, y); y += 24;
 
     doc.setFont("helvetica", "normal"); doc.setFontSize(10);
     doc.text("Generated: " + new Date().toLocaleString(), x, y); y += 18;
 
-    // Participant
-    addLine("Participant", {bold:true, size:12});
-    addLine(`User: ${user.nickname ?? "-"} (${user.email ?? "-"}) — ${user.hotel ?? "-"}`);
-    addLine(`Peer: ${peer.name ?? "-"} (${peer.email ?? "-"}) — ${peer.hotel ?? "-"}`);
-    addGap(6);
+    // TEAM MEMBER
+    doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+    doc.text("TEAM MEMBER", x, y); y += 16;
 
-    // Score
-    addLine("Score", {bold:true, size:12});
-    addLine(`${weightedScore.toFixed(1)} / ${weightedMax.toFixed(1)}  (${pct}%)`);
-    addLine("Note: Weighted scoring applied. High-importance statements influence the score more.");
+    doc.setFont("helvetica", "normal"); doc.setFontSize(11);
+    addLine("Name: " + String(user.nickname ?? "-"));
+    addLine("BED Hotel: " + String(user.hotel ?? "-"));
+    addLine("Email address: " + String(user.email ?? "-"));
+    addGap(8);
+
+    // PEER REVIEWER
+    doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+    doc.text("PEER REVIEWER", x, y); y += 16;
+
+    doc.setFont("helvetica", "normal"); doc.setFontSize(11);
+    addLine("Name: " + String(peer.name ?? "-"));
+    addLine("BED Hotel: " + String(peer.hotel ?? "-"));
+    addLine("Email address: " + String(peer.email ?? "-"));
     addGap(10);
 
+    // ASSESSMENT SCORE
+    const pctText = String(pct) + "%";
+    const band = (pct>=85) ? "Amazing" : (pct>=70) ? "Advanced" : (pct>=50) ? "Developing" : "Needs improvement";
+
+    doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+    doc.text("ASSESSMENT SCORE", x, y); y += 16;
+
+    doc.setFont("helvetica", "bold"); doc.setFontSize(12);
+    doc.text("YOUR SCORE IS " + pctText, x, y); y += 16;
+
+    doc.setFont("helvetica", "normal"); doc.setFontSize(11);
+    doc.text(weightedScore.toFixed(1) + " / " + weightedMax.toFixed(1), x, y); y += 14;
+
+    doc.setFont("helvetica", "italic"); doc.setFontSize(11);
+    doc.text("(" + band + ")", x, y); y += 18;
+
     // Table header
-    if (!qs || !qs.length) {
-      addLine("No questions found.", {size:11});
-    }
     doc.setFont("helvetica", "bold"); doc.setFontSize(11);
-    addTableRow("Statement", "Answer", "Weight");
+    addTableRow("Statement", "Answer 1-5", "Weight");
     doc.setFont("helvetica", "normal"); doc.setFontSize(11);
 
     // Rows
@@ -1279,10 +1334,13 @@ function addLine(text, opts={bold:false, size:12}) {
       const sub = q.subtext ? (" — " + q.subtext) : "";
       const ans = (A[q.id] ?? "-");
       const w   = (typeof q.weight === "number" && isFinite(q.weight)) ? q.weight : 1.0;
-      addTableRow(`${i+1}. ${st}${sub}`, String(ans), String(w));
+      addTableRow(`${i+1}) ${st}${sub}`, String(ans), String(w));
     });
 
-    // File name
+    addGap(6);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+    addLine("Note: Weighted scoring is applied. High-importance statements influence the score more.");
+// File name
     const ts = new Date().toISOString().slice(0,19).replace(/[:T]/g, "-");
     const nick = (user.nickname || "user").replace(/\s+/g, "_");
     const fname = `BED_Assessment_${nick}_${ts}.pdf`;
