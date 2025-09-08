@@ -1180,7 +1180,15 @@ ok.onclick = function(){
     const lineH = 16;
     let x = margin.l, y = margin.t;
 
-    function addLine(text, opts={bold:false, size:12}) {
+    
+    // Ensure we have the latest state and questions
+    const S0 = window.sarState || {};
+    try {
+      if (!Array.isArray(S0.questions) || S0.questions.length === 0) {
+        if (typeof loadQuestions === 'function') { await loadQuestions(); }
+      }
+    } catch(_) {}
+function addLine(text, opts={bold:false, size:12}) {
       doc.setFont("helvetica", opts.bold ? "bold" : "normal");
       doc.setFontSize(opts.size || 12);
       const maxWidth = pageW - margin.l - margin.r;
@@ -1258,6 +1266,9 @@ ok.onclick = function(){
     addGap(10);
 
     // Table header
+    if (!qs || !qs.length) {
+      addLine("No questions found.", {size:11});
+    }
     doc.setFont("helvetica", "bold"); doc.setFontSize(11);
     addTableRow("Statement", "Answer", "Weight");
     doc.setFont("helvetica", "normal"); doc.setFontSize(11);
@@ -1292,7 +1303,7 @@ ok.onclick = function(){
       console.error('PDF save failed', err);
     }
     // Show success modal shortly after triggering download
-    if (typeof openPdfDone === 'function') { setTimeout(openPdfDone, 250); }
+    if (typeof openPdfDone === 'function') { setTimeout(openPdfDone, 250); openPdfDone(); }
     // Show success modal
     if (typeof openPdfDone === 'function') { openPdfDone(); }
 return true;
