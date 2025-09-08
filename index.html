@@ -181,6 +181,16 @@ p{color:#434343;line-height:1.6;}
   color: #ffffff !important;
 }
 
+
+/* Strong press/active styles for the PDF button */
+#finishPDF.sar-btn:active,
+#finishPDF.sar-btn.active,
+#finishPDF.sar-btn.is-pressed {
+  background-color: #1E90FF !important;
+  border-color: #1E90FF !important;
+  color: #ffffff !important;
+}
+
 </style>
 <!-- EmailJS SDK (Option 2: automatic email sending) -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js">
@@ -216,6 +226,17 @@ p{color:#434343;line-height:1.6;}
     pdfBtn.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ add(); setTimeout(rem,150);} });
   }
 })();
+
+
+// Delegated press visual for PDF button
+document.addEventListener('pointerdown', function(e){
+  const t = e.target;
+  if (t && t.id === 'finishPDF') { t.classList.add('is-pressed'); }
+}, true);
+document.addEventListener('pointerup', function(e){
+  const t = document.getElementById('finishPDF');
+  if (t) t.classList.remove('is-pressed');
+}, true);
 
 </script>
 <script>
@@ -1256,9 +1277,22 @@ ok.onclick = function(){
     const fname = `BED_Assessment_${nick}_${ts}.pdf`;
 
     // Save
-    doc.save(fname);
-  
-    
+        // Direct Blob download for better mobile behavior
+    try {
+      const blob = doc.output('blob');
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fname;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(()=>URL.revokeObjectURL(url), 2000);
+    } catch(err) {
+      console.error('PDF save failed', err);
+    }
+    // Show success modal shortly after triggering download
+    if (typeof openPdfDone === 'function') { setTimeout(openPdfDone, 250); }
     // Show success modal
     if (typeof openPdfDone === 'function') { openPdfDone(); }
 return true;
