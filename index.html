@@ -322,6 +322,42 @@ function showPdfToast(msg="Done! Your test results are ready.") {
   } catch(_) {}
 }
 
+
+// --- STEP 1: Force the PDF button to turn blue on press, no matter when it renders ---
+(function(){
+  const BLUE = '#1E90FF';
+  function wire(btn){
+    if (!btn || btn.__wiredBlue) return;
+    btn.__wiredBlue = true;
+    const press = ()=>{
+      try{
+        btn.style.setProperty('background-color', BLUE, 'important');
+        btn.style.setProperty('border-color', BLUE, 'important');
+        btn.style.setProperty('color', '#ffffff', 'important');
+        setTimeout(()=>{
+          btn.style.removeProperty('background-color');
+          btn.style.removeProperty('border-color');
+          btn.style.removeProperty('color');
+        }, 220);
+      }catch(_){}
+    };
+    ['pointerdown','mousedown','touchstart','keydown'].forEach(ev=>{
+      btn.addEventListener(ev, (e)=>{
+        if (ev==='keydown' && !(e.key==='Enter' || e.key===' ')) return;
+        press();
+      }, {passive:true});
+    });
+  }
+  // Wire immediately if present
+  wire(document.getElementById('finishPDF'));
+  // Watch for dynamic render
+  const mo = new MutationObserver(()=>{
+    const b = document.getElementById('finishPDF');
+    if (b) wire(b);
+  });
+  mo.observe(document.documentElement, {subtree:true, childList:true});
+})();
+
 </script>
 <script>
   // === CONFIGURE THESE THREE VALUES IN GITHUB ===
