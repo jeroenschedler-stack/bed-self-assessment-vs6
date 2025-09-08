@@ -207,6 +207,12 @@ button#finishPDF.sar-btn {
   color: #ffffff !important;
 }
 
+
+/* Success modal styling */
+.modal-mask { position: fixed !important; inset: 0 !important; background: rgba(0,0,0,0.45) !important; z-index: 99998 !important; }
+.modal { position: fixed !important; left: 50% !important; top: 30% !important; transform: translateX(-50%) !important; background: #fff !important; max-width: 520px !important; width: 88% !important; border-radius: 12px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.25) !important; z-index: 99999 !important; padding: 16px 18px !important; }
+.modal-footer { text-align: right; }
+
 </style>
 <!-- EmailJS SDK (Option 2: automatic email sending) -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js">
@@ -387,6 +393,23 @@ function showPdfToast(msg="Done! Your test results are ready.") {
   });
   mo.observe(document.documentElement, {subtree:true, childList:true});
 })();
+
+
+// PDF success modal helpers
+function openPdfDone(){
+  try{
+    const m = document.getElementById('pdfDoneModal');
+    const k = document.getElementById('pdfDoneMask');
+    if(k) k.style.display = 'block';
+    if(m) { m.style.display = 'block'; const ok = document.getElementById('pdfDoneOK'); if (ok) { ok.onclick = closePdfDone; ok.focus(); } }
+  }catch(e){ console.warn(e); }
+}
+function closePdfDone(){
+  const m = document.getElementById('pdfDoneModal');
+  const k = document.getElementById('pdfDoneMask');
+  if(k) k.style.display = 'none';
+  if(m) m.style.display = 'none';
+}
 
 </script>
 <script>
@@ -953,8 +976,10 @@ function downloadSarResults(){
   const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
   a.download = `BED-SAR-Results-${stamp}.csv`;
   document.body.appendChild(a);
-  a.click();
-  URL.revokeObjectURL(url);
+  \1
+      // Show success popup after triggering download
+      if (typeof openPdfDone === 'function') { setTimeout(openPdfDone, 120); }
+URL.revokeObjectURL(url);
   a.remove();
 }
 
