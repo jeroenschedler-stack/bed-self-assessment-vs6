@@ -197,6 +197,16 @@ p{color:#434343;line-height:1.6;}
 .modal { position: fixed !important; left: 50% !important; top: 30% !important; transform: translateX(-50%) !important; background: #fff !important; max-width: 520px !important; width: 88% !important; border-radius: 12px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.25) !important; z-index: 99999 !important; padding: 16px 18px !important; }
 .modal-footer { text-align: right; }
 
+
+/* STEP‑1C: Force the PDF button to appear blue whenever it exists */
+#finishPDF, 
+#finishPDF.sar-btn, 
+button#finishPDF.sar-btn {
+  background-color: #1E90FF !important;
+  border-color: #1E90FF !important;
+  color: #ffffff !important;
+}
+
 </style>
 <!-- EmailJS SDK (Option 2: automatic email sending) -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js">
