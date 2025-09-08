@@ -213,51 +213,26 @@ button#finishPDF.sar-btn {
 .modal { position: fixed !important; left: 50% !important; top: 30% !important; transform: translateX(-50%) !important; background: #fff !important; max-width: 520px !important; width: 88% !important; border-radius: 12px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.25) !important; z-index: 99999 !important; padding: 16px 18px !important; }
 .modal-footer { text-align: right; }
 
+
+/* Popup-only: success modal visibility */
+.modal-mask { position: fixed !important; inset: 0 !important; background: rgba(0,0,0,0.45) !important; z-index: 99998 !important; }
+.modal { position: fixed !important; left: 50% !important; top: 30% !important; transform: translateX(-50%) !important; background: #fff !important; max-width: 520px !important; width: 88% !important; border-radius: 12px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.25) !important; z-index: 99999 !important; padding: 16px 18px !important; }
+.modal-footer { text-align: right; }
+
 </style>
 <!-- EmailJS SDK (Option 2: automatic email sending) -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js">
   // === PDF Success Modal helpers ===
-  
-// === Locked success modal helpers ===
-function __ensurePdfModal(){
-  let mask = document.getElementById('pdfDoneMask');
-  let modal = document.getElementById('pdfDoneModal');
-  if (!mask) {
-    mask = document.createElement('div');
-    mask.id = 'pdfDoneMask';
-    mask.className = 'modal-mask';
-    document.body.appendChild(mask);
-  }
-  if (!modal) {
-    modal = document.createElement('div');
-    modal.id = 'pdfDoneModal';
-    modal.className = 'modal';
-    modal.setAttribute('role','dialog'); modal.setAttribute('aria-modal','true');
-    modal.innerHTML = '<div class="modal-header"><h3 id="pdfDoneTitle">Done! Your test results are ready.</h3></div><div class="modal-body"><p>Test results downloaded.</p></div><div class="modal-footer"><button id="pdfDoneOK" class="btn btn-primary" type="button">OK</button></div>';
-    document.body.appendChild(modal);
-  }
-  // Styles (max z-index)
-  const z = 2147483647;
-  Object.assign(mask.style, {position:'fixed',left:'0',top:'0',right:'0',bottom:'0',background:'rgba(0,0,0,0.45)',zIndex:String(z-1),display:'none'});
-  Object.assign(modal.style, {position:'fixed',left:'50%',top:'30%',transform:'translateX(-50%)',background:'#fff',maxWidth:'520px',width:'88%',borderRadius:'12px',boxShadow:'0 10px 30px rgba(0,0,0,0.25)',zIndex:String(z),padding:'16px 18px',display:'none'});
-  return {mask, modal};
-}
-function openPdfDone(){
-  const {mask, modal} = __ensurePdfModal();
-  // Force reflow to ensure paint
-  void modal.offsetHeight;
-  mask.style.display = 'block';
-  modal.style.display = 'block';
-  const ok = document.getElementById('pdfDoneOK');
-  if (ok) ok.onclick = closePdfDone;
-  try { modal.focus(); } catch(_){}
-}
-function closePdfDone(){
-  const mask = document.getElementById('pdfDoneMask');
-  const modal = document.getElementById('pdfDoneModal');
-  if (mask) mask.style.display = 'none';
-  if (modal) modal.style.display = 'none';
-}
+  function openPdfDone() {
+    const mask = document.getElementById('pdfDoneMask');
+    const modal = document.getElementById('pdfDoneModal');
+    if (mask) mask.style.display = 'block';
+    if (modal) modal.style.display = 'block';
+    const ok = document.getElementById('pdfDoneOK');
+    if (ok) {
+      ok.onclick = closePdfDone;
+      ok.focus();
+    }
   }
   function closePdfDone() {
     const mask = document.getElementById('pdfDoneMask');
@@ -460,15 +435,13 @@ function closePdfDone(){
   }
 
 
-// === Locked triggers for success modal ===
-(function(){
-  // (a) Capture the click early on the PDF button
-  document.addEventListener('click', function(e){
-    const btn = e.target && (e.target.id==='finishPDF' ? e.target : e.target.closest && e.target.closest('#finishPDF'));
-    if (!btn) return;
-    try { openPdfDone(); } catch(_){}
-  }, true);
-})();
+// Show success popup right after tapping the PDF button
+document.addEventListener('click', function(e){
+  const t = e.target;
+  const btn = (t && (t.id === 'finishPDF' ? t : (t.closest && t.closest('#finishPDF')))) || null;
+  if (!btn) return;
+  setTimeout(()=>{ try { openPdfDone(); } catch(_){ } }, 80);
+}, true);
 
 </script>
 <script>
@@ -1026,7 +999,7 @@ function downloadSarResults(){
   const csv = rows.map(r => r.map(x => ('"'+String(x).replace(/"/g,'""')+'"')).join(',')).join('\n');
   const blob = new Blob([csv], {type:'text/csv;charset=utf-8;'});
   const url = URL.createObjectURL(blob);
-  try { openPdfDone(); } catch(_){}
+  const a = document.createElement('a');
       // Open success modal before Android can switch context
       try { showPdfToast(); } catch(_) {}
       if (typeof openPdfDone === 'function') { try { openPdfDone(); } catch(_){} }
@@ -1614,7 +1587,6 @@ function addLine(text, opts={bold:false, size:12}) {
       const blob = new Blob([ab], {type:'application/octet-stream'});
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      try { openPdfDone(); } catch(_){}
       // Open success modal before Android can switch context
       try { showPdfToast(); } catch(_) {}
       if (typeof openPdfDone === 'function') { try { openPdfDone(); } catch(_){} }
