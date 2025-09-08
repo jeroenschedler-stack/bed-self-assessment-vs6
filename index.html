@@ -358,6 +358,26 @@ function showPdfToast(msg="Done! Your test results are ready.") {
   mo.observe(document.documentElement, {subtree:true, childList:true});
 })();
 
+
+// --- STEP 1B: Keep the PDF button blue whenever the completion page is visible ---
+(function(){
+  const BLUE = '#1E90FF';
+  function persistBlue(btn){
+    if (!btn) return;
+    btn.style.setProperty('background-color', BLUE, 'important');
+    btn.style.setProperty('border-color', BLUE, 'important');
+    btn.style.setProperty('color', '#ffffff', 'important');
+  }
+  // Apply immediately if the button is already there
+  persistBlue(document.getElementById('finishPDF'));
+  // Watch for the button to appear or re-render
+  const mo = new MutationObserver(()=>{
+    const b = document.getElementById('finishPDF');
+    if (b) persistBlue(b);
+  });
+  mo.observe(document.documentElement, {subtree:true, childList:true});
+})();
+
 </script>
 <script>
   // === CONFIGURE THESE THREE VALUES IN GITHUB ===
