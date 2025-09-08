@@ -214,7 +214,7 @@ button#finishPDF.sar-btn {
 .modal-footer { text-align: right; }
 
 
-/* FINAL: success modal always on top */
+/* LAST-CHANCE modal CSS (always on top) */
 .modal-mask { position: fixed !important; inset: 0 !important; background: rgba(0,0,0,0.45) !important; z-index: 2147483646 !important; }
 .modal { position: fixed !important; left: 50% !important; top: 30% !important; transform: translateX(-50%) !important; background: #fff !important; max-width: 520px !important; width: 88% !important; border-radius: 12px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.25) !important; z-index: 2147483647 !important; padding: 16px 18px !important; display:none; }
 .modal-footer { text-align: right; }
@@ -224,24 +224,203 @@ button#finishPDF.sar-btn {
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js">
   // === PDF Success Modal helpers ===
   
-// FINAL: Success modal helpers (idempotent)
+// LAST-CHANCE: modal helpers
+function openPdfDone(){
+  try {
+    var mask = document.getElementById('pdfDoneMask');
+    var modal = document.getElementById('pdfDoneModal');
+    if (mask) mask.style.display = 'block';
+    if (modal) {
+      modal.style.display = 'block';
+      var ok = document.getElementById('pdfDoneOK');
+      if (ok) ok.onclick = closePdfDone;
+      try { modal.focus(); } catch(_){}
+    }
+  } catch(e) {}
+  // Toast fallback (redundant)
+  try { showPdfToast('Done! Your test results are ready.'); } catch(_) {}
+}
+function closePdfDone(){
+  var mask = document.getElementById('pdfDoneMask');
+  var modal = document.getElementById('pdfDoneModal');
+  if (mask) mask.style.display = 'none';
+  if (modal) modal.style.display = 'none';
+}
+
+
+// Visual feedback for PDF button
+(function(){
+  const pdfBtn = document.getElementById('finishPDF');
+  if (pdfBtn) {
+    const add = () => pdfBtn.classList.add('active');
+    const rem = () => pdfBtn.classList.remove('active');
+    pdfBtn.addEventListener('pointerdown', add);
+    pdfBtn.addEventListener('pointerup', rem);
+    pdfBtn.addEventListener('pointerleave', rem);
+    pdfBtn.addEventListener('keydown', (e)=>{ if(e.key==='Enter' || e.key===' '){ add(); setTimeout(rem,150);} });
+  }
+})();
+
+
+// Delegated press visual for PDF button
+document.addEventListener('pointerdown', function(e){
+  const t = e.target;
+  if (t && t.id === 'finishPDF') { t.classList.add('is-pressed'); }
+}, true);
+document.addEventListener('pointerup', function(e){
+  const t = document.getElementById('finishPDF');
+  if (t) t.classList.remove('is-pressed');
+}, true);
+
+
+// Strong, device-agnostic blue-press feedback for the PDF button
+document.addEventListener('DOMContentLoaded', function(){
+  const pdfBtn = document.getElementById('finishPDF');
+  if (!pdfBtn) return;
+  const add = () => {
+    pdfBtn.classList.add('active');
+    try {
+      pdfBtn.style.setProperty('background-color', '#1E90FF', 'important');
+      pdfBtn.style.setProperty('border-color', '#1E90FF', 'important');
+      pdfBtn.style.setProperty('color', '#ffffff', 'important');
+    } catch(_){}
+  };
+  const rem = () => {
+    pdfBtn.classList.remove('active');
+    try {
+      pdfBtn.style.removeProperty('background-color');
+      pdfBtn.style.removeProperty('border-color');
+      pdfBtn.style.removeProperty('color');
+    } catch(_){}
+  };
+  ['pointerdown','mousedown','touchstart'].forEach(ev => pdfBtn.addEventListener(ev, add, {passive:true}));
+  ['pointerup','mouseleave','touchend','touchcancel','blur'].forEach(ev => pdfBtn.addEventListener(ev, rem));
+});
+
+
+// Global delegation so the PDF button turns blue even if rendered later
+(function(){
+  function isPdfBtn(t){ return t && (t.id === 'finishPDF' || (t.closest && t.closest('#finishPDF'))); }
+  document.addEventListener('pointerdown', function(e){
+    const t = e.target;
+    const btn = isPdfBtn(t) ? (t.id==='finishPDF'?t:t.closest('#finishPDF')) : null;
+    if (!btn) return;
+    btn.classList.add('active');
+    btn.style.setProperty('background-color','#1E90FF','important');
+    btn.style.setProperty('border-color','#1E90FF','important');
+    btn.style.setProperty('color','#ffffff','important');
+  }, true);
+  function clear(){ 
+    const btn = document.getElementById('finishPDF'); 
+    if (!btn) return;
+    btn.classList.remove('active');
+    btn.style.removeProperty('background-color');
+    btn.style.removeProperty('border-color');
+    btn.style.removeProperty('color');
+  }
+  ['pointerup','pointercancel','mouseleave','blur','touchend','touchcancel'].forEach(ev=>{
+    document.addEventListener(ev, clear, true);
+  });
+})();
+
+// Lightweight toast for success confirmation
+function showPdfToast(msg="Done! Your test results are ready.") {
+  try {
+    let t = document.getElementById('pdfToast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'pdfToast';
+      t.style.position = 'fixed';
+      t.style.left = '50%';
+      t.style.bottom = '24px';
+      t.style.transform = 'translateX(-50%)';
+      t.style.background = 'rgba(0,0,0,0.85)';
+      t.style.color = '#fff';
+      t.style.padding = '10px 14px';
+      t.style.fontSize = '14px';
+      t.style.borderRadius = '10px';
+      t.style.zIndex = '100000';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.opacity = '1';
+    t.style.display = 'block';
+    setTimeout(()=>{ t.style.transition='opacity 300ms'; t.style.opacity='0'; }, 1600);
+    setTimeout(()=>{ t.style.display='none'; t.style.transition=''; }, 2200);
+  } catch(_) {}
+}
+
+
+// --- STEP 1: Force the PDF button to turn blue on press, no matter when it renders ---
+(function(){
+  const BLUE = '#1E90FF';
+  function wire(btn){
+    if (!btn || btn.__wiredBlue) return;
+    btn.__wiredBlue = true;
+    const press = ()=>{
+      try{
+        btn.style.setProperty('background-color', BLUE, 'important');
+        btn.style.setProperty('border-color', BLUE, 'important');
+        btn.style.setProperty('color', '#ffffff', 'important');
+        setTimeout(()=>{
+          btn.style.removeProperty('background-color');
+          btn.style.removeProperty('border-color');
+          btn.style.removeProperty('color');
+        }, 220);
+      }catch(_){}
+    };
+    ['pointerdown','mousedown','touchstart','keydown'].forEach(ev=>{
+      btn.addEventListener(ev, (e)=>{
+        if (ev==='keydown' && !(e.key==='Enter' || e.key===' ')) return;
+        press();
+      }, {passive:true});
+    });
+  }
+  // Wire immediately if present
+  wire(document.getElementById('finishPDF'));
+  // Watch for dynamic render
+  const mo = new MutationObserver(()=>{
+    const b = document.getElementById('finishPDF');
+    if (b) wire(b);
+  });
+  mo.observe(document.documentElement, {subtree:true, childList:true});
+})();
+
+
+// --- STEP 1B: Keep the PDF button blue whenever the completion page is visible ---
+(function(){
+  const BLUE = '#1E90FF';
+  function persistBlue(btn){
+    if (!btn) return;
+    btn.style.setProperty('background-color', BLUE, 'important');
+    btn.style.setProperty('border-color', BLUE, 'important');
+    btn.style.setProperty('color', '#ffffff', 'important');
+  }
+  // Apply immediately if the button is already there
+  persistBlue(document.getElementById('finishPDF'));
+  // Watch for the button to appear or re-render
+  const mo = new MutationObserver(()=>{
+    const b = document.getElementById('finishPDF');
+    if (b) persistBlue(b);
+  });
+  mo.observe(document.documentElement, {subtree:true, childList:true});
+})();
+
+
+// PDF success modal helpers
 function openPdfDone(){
   try{
-    var m = document.getElementById('pdfDoneModal');
-    var k = document.getElementById('pdfDoneMask');
-    if (k) k.style.display = 'block';
-    if (m) {
-      m.style.display = 'block';
-      var ok = document.getElementById('pdfDoneOK');
-      if (ok) { ok.onclick = closePdfDone; try{ ok.focus(); }catch(_){} }
-    }
+    const m = document.getElementById('pdfDoneModal');
+    const k = document.getElementById('pdfDoneMask');
+    if(k) k.style.display = 'block';
+    if(m) { m.style.display = 'block'; const ok = document.getElementById('pdfDoneOK'); if (ok) { ok.onclick = closePdfDone; ok.focus(); } }
   }catch(e){ console.warn(e); }
 }
 function closePdfDone(){
-  var m = document.getElementById('pdfDoneModal');
-  var k = document.getElementById('pdfDoneMask');
-  if (k) k.style.display = 'none';
-  if (m) m.style.display = 'none';
+  const m = document.getElementById('pdfDoneModal');
+  const k = document.getElementById('pdfDoneMask');
+  if(k) k.style.display = 'none';
+  if(m) m.style.display = 'none';
 }
 
 
@@ -262,23 +441,61 @@ function closePdfDone(){
   }
 
 
-// FINAL: Hardwire inline handlers on the PDF button
+// Toast fallback (if modal isn't visible for any reason)
+function showPdfToast(msg){
+  try {
+    var t = document.getElementById('pdfToast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'pdfToast';
+      t.style.position = 'fixed';
+      t.style.left = '50%';
+      t.style.bottom = '24px';
+      t.style.transform = 'translateX(-50%)';
+      t.style.background = 'rgba(0,0,0,0.85)';
+      t.style.color = '#fff';
+      t.style.padding = '10px 14px';
+      t.style.fontSize = '14px';
+      t.style.borderRadius = '10px';
+      t.style.zIndex = '2147483647';
+      t.style.display = 'none';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg || 'Done! Your test results are ready.';
+    t.style.display = 'block';
+    t.style.opacity = '1';
+    setTimeout(function(){ t.style.transition = 'opacity 300ms'; t.style.opacity = '0'; }, 1500);
+    setTimeout(function(){ t.style.display = 'none'; t.style.transition=''; }, 2100);
+  } catch (e) {}
+}
+
+
+// LAST-CHANCE: wire inline handlers to #finishPDF and add backups
 (function(){
-  function wireInline(btn){
-    if (!btn || btn.__pdfInlineWired) return;
-    btn.__pdfInlineWired = true;
-    // Set inline attributes (cannot be removed by other listeners)
-    try { btn.setAttribute('onclick', "try{openPdfDone()}catch(e){}"); } catch(_) {}
-    try { btn.setAttribute('onpointerup', "try{setTimeout(openPdfDone,120)}catch(e){}"); } catch(_) {}
+  function wire(btn){
+    if (!btn || btn.__lc) return;
+    btn.__lc = true;
+    // Inline attributes ensure the popup shows even if other code interferes
+    try { btn.setAttribute('onclick', "try{openPdfDone()}catch(e){}"); } catch(_){}
+    try { btn.setAttribute('onpointerup', "try{setTimeout(openPdfDone,120)}catch(e){}"); } catch(_){}
+    try { btn.setAttribute('onmouseup', "try{setTimeout(openPdfDone,120)}catch(e){}"); } catch(_){}
+    try { btn.setAttribute('ontouchend', "try{setTimeout(openPdfDone,120)}catch(e){}"); } catch(_){}
   }
-  // Wire existing
-  wireInline(document.getElementById('finishPDF'));
-  // Observe future renders
+  // Wire existing button
+  wire(document.getElementById('finishPDF'));
+  // Observe DOM for future renders
   var mo = new MutationObserver(function(){
     var b = document.getElementById('finishPDF');
-    if (b) wireInline(b);
+    if (b) wire(b);
   });
   mo.observe(document.documentElement, {subtree:true, childList:true});
+  // Also capture clicks at the document level as a safety net
+  document.addEventListener('click', function(e){
+    var t = e.target;
+    var btn = (t && (t.id==='finishPDF' ? t : (t.closest && t.closest('#finishPDF')))) || null;
+    if (!btn) return;
+    setTimeout(function(){ try { openPdfDone(); } catch(_){ } }, 90);
+  }, true);
 })();
 
 </script>
@@ -916,7 +1133,7 @@ ok.onclick = function(){
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
-      /*FINAL_SUCCESS*/ try { setTimeout(openPdfDone, 150); } catch(_){ }
+      /*LC*/ try { setTimeout(openPdfDone, 160); } catch(_){ }
       setTimeout(function(){ if(a && a.parentNode) a.parentNode.removeChild(a); }, 1000);
       alert("the email has been sent");
     }
