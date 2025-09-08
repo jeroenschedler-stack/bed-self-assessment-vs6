@@ -294,6 +294,34 @@ document.addEventListener('DOMContentLoaded', function(){
     document.addEventListener(ev, clear, true);
   });
 })();
+
+// Lightweight toast for success confirmation
+function showPdfToast(msg="Done! Your test results are ready.") {
+  try {
+    let t = document.getElementById('pdfToast');
+    if (!t) {
+      t = document.createElement('div');
+      t.id = 'pdfToast';
+      t.style.position = 'fixed';
+      t.style.left = '50%';
+      t.style.bottom = '24px';
+      t.style.transform = 'translateX(-50%)';
+      t.style.background = 'rgba(0,0,0,0.85)';
+      t.style.color = '#fff';
+      t.style.padding = '10px 14px';
+      t.style.fontSize = '14px';
+      t.style.borderRadius = '10px';
+      t.style.zIndex = '100000';
+      document.body.appendChild(t);
+    }
+    t.textContent = msg;
+    t.style.opacity = '1';
+    t.style.display = 'block';
+    setTimeout(()=>{ t.style.transition='opacity 300ms'; t.style.opacity='0'; }, 1600);
+    setTimeout(()=>{ t.style.display='none'; t.style.transition=''; }, 2200);
+  } catch(_) {}
+}
+
 </script>
 <script>
   // === CONFIGURE THESE THREE VALUES IN GITHUB ===
@@ -852,6 +880,8 @@ function downloadSarResults(){
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
       // Open success modal before Android can switch context
+      try { showPdfToast(); } catch(_) {}
+      if (typeof openPdfDone === 'function') { try { openPdfDone(); } catch(_){} }
       if (typeof openPdfDone === 'function') { try { openPdfDone(); } catch(_){} }
   a.href = url;
   const stamp = new Date().toISOString().slice(0,19).replace(/[:T]/g,'-');
@@ -1295,7 +1325,44 @@ function addLine(text, opts={bold:false, size:12}) {
     const A = S.answers || {};
 
     
-    // Ensure questions exist locally even if helper functions are out of scope
+    
+    // Recover answers from localStorage if missing
+    try {
+      if ((!A || Object.keys(A).length === 0) && window.localStorage) {
+        const saved = localStorage.getItem('sarState');
+        if (saved) {
+          const tmp = JSON.parse(saved);
+          if (tmp && tmp.answers) { S.answers = tmp.answers; }
+          if (tmp && tmp.user && !S.user) { S.user = tmp.user; }
+        }
+      }
+    } catch(_) {}
+
+    // Ensure questions exist: prefer embedded JSON, then fetch (?v=1, plain)
+    let qs = Array.isArray(S.questions) ? S.questions : [];
+    try {
+      if (!qs || !qs.length) {
+        const node = document.getElementById('embeddedQuestions');
+        if (node && node.textContent) {
+          qs = JSON.parse(node.textContent);
+          S.questions = qs;
+        }
+      }
+      if ((!qs || !qs.length) && typeof fetch === 'function') {
+        try {
+          const r1 = await fetch('./questions.json?v=1', {cache:'no-store'});
+          if (r1.ok) { qs = await r1.json(); }
+        } catch(_){}
+        if (!qs || !qs.length) {
+          try {
+            const r2 = await fetch('./questions.json', {cache:'no-store'});
+            if (r2.ok) { qs = await r2.json(); }
+          } catch(_){}
+        }
+        if (Array.isArray(qs)) S.questions = qs;
+      }
+    } catch(_) {}
+// Ensure questions exist locally even if helper functions are out of scope
     let qs = Array.isArray(S.questions) ? S.questions : [];
     if (!qs || !qs.length) {
       try {
@@ -1396,6 +1463,8 @@ function addLine(text, opts={bold:false, size:12}) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       // Open success modal before Android can switch context
+      try { showPdfToast(); } catch(_) {}
+      if (typeof openPdfDone === 'function') { try { openPdfDone(); } catch(_){} }
       if (typeof openPdfDone === 'function') { try { openPdfDone(); } catch(_){} }
       a.href = url;
       a.download = fname;
@@ -1407,6 +1476,7 @@ function addLine(text, opts={bold:false, size:12}) {
       console.error('PDF save failed', err);
     }
     // Show success modal shortly after triggering download
+    try { showPdfToast(); } catch(_) {}
     if (typeof openPdfDone === 'function') { requestAnimationFrame(()=>openPdfDone()); setTimeout(openPdfDone, 300); }
     // Show success modal
     if (typeof openPdfDone === 'function') { openPdfDone(); }
@@ -1480,6 +1550,10 @@ return true;
       <button id="pdfDoneOK" class="btn btn-primary" type="button">OK</button>
     </div>
   </div>
+
+
+<!-- Embedded questions to avoid fetch issues -->
+<script id="embeddedQuestions" type="application/json">[{"id": "q1", "statement": "1. I reply to guests very quickly", "subtext": "I often check for messages and answer right away"}, {"id": "q2", "statement": "2. I make my replies warm and personal", "subtext": "I use their name and add helpful information"}, {"id": "q3", "statement": "3. I make a great first impression", "subtext": "I know that starts from the very first message"}, {"id": "q4", "statement": "4. I can see if a guest is stressed or relaxed", "subtext": "I adjust the way I check-in to the mood"}, {"id": "q5", "statement": "5. I ask questions before I ask passports", "subtext": "I welcome guests like friends"}, {"id": "q6", "statement": "6. I can check-in a guest in 60 seconds", "subtext": "I timed this three times with standard check-ins"}, {"id": "q7", "statement": "7. I check in groups differently than FIT", "subtext": "I usually check-in groups with the leader"}, {"id": "q8", "statement": "8. I don't tell guests that check-in time is 14:00", "subtext": "They can check-in as soon as the room is ready"}, {"id": "q9", "statement": "9. I don't show stress when there is a problem", "subtext": "I know that makes guests really worry"}, {"id": "q10", "statement": "10. I show genuine interest during check-out", "subtext": "I ask about their stay or next destination"}, {"id": "q11", "statement": "11. I make great last impressions", "subtext": "I walk them out and wait until their car has left"}, {"id": "q12", "statement": "12. I use names to connect with guests", "subtext": "When it feels right I tell my name and use theirs"}, {"id": "q13", "statement": "13. I scan every guest every time", "subtext": "I don't look at a group but at each individual"}, {"id": "q14", "statement": "14. I am good at scanning", "subtext": "I see what people need before they ask"}, {"id": "q15", "statement": "15. I create unique surprises for guests", "subtext": "I do more than offering free things"}, {"id": "q16", "statement": "16. Music is an essential part of the vibe", "subtext": "I listen to make sure we play the right music"}, {"id": "q17", "statement": "17. I invite guests to share other BED facilities", "subtext": "I offer downtown coffee, bigger pool or breakfast"}, {"id": "q18", "statement": "18. its annoying when a room key doesn't work", "subtext": "I go up to make sure the new key works"}, {"id": "q19", "statement": "19. I talk with guests because I am interested", "subtext": "When I force myself it will not be real"}, {"id": "q20", "statement": "20. I often give my friends honest feedback", "subtext": "I’m happy to help them to grow"}, {"id": "q21", "statement": "21. My friends often give me honest feedback", "subtext": "I’m happy they help me to grow"}, {"id": "q22", "statement": "22. I can answer most questions about BED", "subtext": "I have visited the rooms in all our hotels"}, {"id": "q23", "statement": "23. I understand the meaning of \"showtime\"", "subtext": "The magic happens from 07:00-10:00"}, {"id": "q24", "statement": "24. I know the story of \"peeling the onion\"", "subtext": "I don't act. Usually I show my true self"}, {"id": "q25", "statement": "25. I never gossip. I signed “I Promise”", "subtext": "I don't talk bad when someone's not here"}, {"id": "q26", "statement": "26. I really understand that rules can be flexible", "subtext": "Without reasons many rules just disappear"}, {"id": "q27", "statement": "27. I am confident about my own judgment", "subtext": "I make decisions without asking permission"}, {"id": "q28", "statement": "28. I look after the rooms and public areas", "subtext": "I share responsibility for the whole hotel"}, {"id": "q29", "statement": "29. I look around when I arrive at the hotel", "subtext": "I share responsibility for the whole hotel"}, {"id": "q30", "statement": "30. I don't pass problems to others but act myself", "subtext": "I follow up later to make sure it's fixed"}, {"id": "q31", "statement": "31. I am not afraid of the CEO or my coach", "subtext": "I know I am allowed to make mistakes"}, {"id": "q32", "statement": "32. I have no manuals that show me what to do", "subtext": "That means I cannot do anything wrong"}]</script>
 
 </body>
 </html>
