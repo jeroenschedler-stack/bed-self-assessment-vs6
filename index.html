@@ -213,39 +213,27 @@ button#finishPDF.sar-btn {
 .modal { position: fixed !important; left: 50% !important; top: 30% !important; transform: translateX(-50%) !important; background: #fff !important; max-width: 520px !important; width: 88% !important; border-radius: 12px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.25) !important; z-index: 99999 !important; padding: 16px 18px !important; }
 .modal-footer { text-align: right; }
 
-
-/* LAST-CHANCE modal CSS (always on top) */
-.modal-mask { position: fixed !important; inset: 0 !important; background: rgba(0,0,0,0.45) !important; z-index: 2147483646 !important; }
-.modal { position: fixed !important; left: 50% !important; top: 30% !important; transform: translateX(-50%) !important; background: #fff !important; max-width: 520px !important; width: 88% !important; border-radius: 12px !important; box-shadow: 0 10px 30px rgba(0,0,0,0.25) !important; z-index: 2147483647 !important; padding: 16px 18px !important; display:none; }
-.modal-footer { text-align: right; }
-
 </style>
 <!-- EmailJS SDK (Option 2: automatic email sending) -->
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js">
   // === PDF Success Modal helpers ===
-  
-// LAST-CHANCE: modal helpers
-function openPdfDone(){
-  try {
-    var mask = document.getElementById('pdfDoneMask');
-    var modal = document.getElementById('pdfDoneModal');
+  function openPdfDone() {
+    const mask = document.getElementById('pdfDoneMask');
+    const modal = document.getElementById('pdfDoneModal');
     if (mask) mask.style.display = 'block';
-    if (modal) {
-      modal.style.display = 'block';
-      var ok = document.getElementById('pdfDoneOK');
-      if (ok) ok.onclick = closePdfDone;
-      try { modal.focus(); } catch(_){}
+    if (modal) modal.style.display = 'block';
+    const ok = document.getElementById('pdfDoneOK');
+    if (ok) {
+      ok.onclick = closePdfDone;
+      ok.focus();
     }
-  } catch(e) {}
-  // Toast fallback (redundant)
-  try { showPdfToast('Done! Your test results are ready.'); } catch(_) {}
-}
-function closePdfDone(){
-  var mask = document.getElementById('pdfDoneMask');
-  var modal = document.getElementById('pdfDoneModal');
-  if (mask) mask.style.display = 'none';
-  if (modal) modal.style.display = 'none';
-}
+  }
+  function closePdfDone() {
+    const mask = document.getElementById('pdfDoneMask');
+    const modal = document.getElementById('pdfDoneModal');
+    if (mask) mask.style.display = 'none';
+    if (modal) modal.style.display = 'none';
+  }
 
 
 // Visual feedback for PDF button
@@ -441,132 +429,100 @@ function closePdfDone(){
   }
 
 
-// Toast fallback (if modal isn't visible for any reason)
-function showPdfToast(msg){
-  try {
-    var t = document.getElementById('pdfToast');
-    if (!t) {
-      t = document.createElement('div');
-      t.id = 'pdfToast';
-      t.style.position = 'fixed';
-      t.style.left = '50%';
-      t.style.bottom = '24px';
-      t.style.transform = 'translateX(-50%)';
-      t.style.background = 'rgba(0,0,0,0.85)';
-      t.style.color = '#fff';
-      t.style.padding = '10px 14px';
-      t.style.fontSize = '14px';
-      t.style.borderRadius = '10px';
-      t.style.zIndex = '2147483647';
-      t.style.display = 'none';
-      document.body.appendChild(t);
-    }
-    t.textContent = msg || 'Done! Your test results are ready.';
-    t.style.display = 'block';
-    t.style.opacity = '1';
-    setTimeout(function(){ t.style.transition = 'opacity 300ms'; t.style.opacity = '0'; }, 1500);
-    setTimeout(function(){ t.style.display = 'none'; t.style.transition=''; }, 2100);
-  } catch (e) {}
-}
-
-
-// LAST-CHANCE: wire inline handlers to #finishPDF and add backups
+// === PDF RESCUE LAYER ===
 (function(){
-  function wire(btn){
-    if (!btn || btn.__lc) return;
-    btn.__lc = true;
-    // Inline attributes ensure the popup shows even if other code interferes
-    try { btn.setAttribute('onclick', "try{openPdfDone()}catch(e){}"); } catch(_){}
-    try { btn.setAttribute('onpointerup', "try{setTimeout(openPdfDone,120)}catch(e){}"); } catch(_){}
-    try { btn.setAttribute('onmouseup', "try{setTimeout(openPdfDone,120)}catch(e){}"); } catch(_){}
-    try { btn.setAttribute('ontouchend', "try{setTimeout(openPdfDone,120)}catch(e){}"); } catch(_){}
+  // 0) Tiny toast for user feedback
+  function toast(msg){
+    try{
+      var t = document.getElementById('pdfRescueToast');
+      if(!t){
+        t = document.createElement('div');
+        t.id = 'pdfRescueToast';
+        t.style.cssText = 'position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:rgba(0,0,0,.85);color:#fff;padding:10px 14px;border-radius:10px;z-index:2147483647;opacity:0;transition:opacity .25s;';
+        document.body.appendChild(t);
+      }
+      t.textContent = msg || 'Preparing PDF…';
+      t.style.opacity = '1';
+      setTimeout(function(){ t.style.opacity = '0'; }, 1200);
+    }catch(_){}
   }
-  // Wire existing button
-  wire(document.getElementById('finishPDF'));
-  // Observe DOM for future renders
-  var mo = new MutationObserver(function(){
-    var b = document.getElementById('finishPDF');
-    if (b) wire(b);
-  });
-  mo.observe(document.documentElement, {subtree:true, childList:true});
-  // Also capture clicks at the document level as a safety net
-  document.addEventListener('click', function(e){
-    var t = e.target;
-    var btn = (t && (t.id==='finishPDF' ? t : (t.closest && t.closest('#finishPDF')))) || null;
-    if (!btn) return;
-    setTimeout(function(){ try { openPdfDone(); } catch(_){ } }, 90);
-  }, true);
-})();
 
-
-// === DOWNLOAD FIX: Ensure clicking the PDF button generates & downloads the report ===
-(function(){
-  // Helper: wait for a condition
-  function __waitFor(cond, timeoutMs=3000, interval=50){
-    return new Promise((resolve) => {
-      const start = Date.now();
-      (function tick(){
-        try { if (cond()) return resolve(true); } catch(_){}
-        if (Date.now() - start > timeoutMs) return resolve(false);
-        setTimeout(tick, interval);
-      })();
+  // 1) Ensure jsPDF exists (load from CDN if needed)
+  async function ensureJsPDF(){
+    if (window.jspdf && window.jspdf.jsPDF) return true;
+    await new Promise(function(resolve, reject){
+      var s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js';
+      s.onload = resolve; s.onerror = reject;
+      document.head.appendChild(s);
     });
+    return !!(window.jspdf && window.jspdf.jsPDF);
   }
 
-  // Fallback generator if missing (keeps minimal header; your full generator will be used if present)
-  async function __fallbackGenerateAndSave(){
-    const ok = await __waitFor(()=> window.jspdf && window.jspdf.jsPDF, 4000);
-    const jsPDF = window.jspdf && window.jspdf.jsPDF;
-    if (!ok || !jsPDF) throw new Error('jsPDF not loaded');
+  // 2) Fallback generator (used only if your generatePdfFromState is missing/failing)
+  async function fallbackGenerateAndSave(){
+    const ok = await ensureJsPDF();
+    if(!ok) throw new Error('jsPDF failed to load');
+    const jsPDF = window.jspdf.jsPDF;
     const doc = new jsPDF({unit:'pt', format:'a4'});
-    const margin = { l: 42, t: 48 };
+    const x=42, y=48;
     doc.setFont('helvetica','bold'); doc.setFontSize(16);
-    doc.text('BED Self-Assessment — Completed Report', margin.l, margin.t);
-    // Robust save: Blob -> anchor, fallback to doc.save
+    doc.text('BED Self-Assessment — Report', x, y);
+    // Save via Blob -> <a download>
     const fname = 'BED_Assessment.pdf';
     try {
       const ab = doc.output('arraybuffer');
       const blob = new Blob([ab], {type:'application/pdf'});
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url;
-      a.download = fname;
+      a.href = url; a.download = fname;
       (document.body||document.documentElement).appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(()=>URL.revokeObjectURL(url), 2000);
+      a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(url); }, 2000);
     } catch(e) {
       try { doc.save(fname); } catch(_) { throw e; }
     }
     return true;
   }
 
-  async function __doPdfDownload(){
+  // 3) Unified download handler
+  async function doPdfDownload(){
+    toast('Preparing PDF…');
     try {
-      // Prefer your existing generator if available
+      // Prefer your full generator
       if (typeof generatePdfFromState === 'function') {
+        // Make sure jsPDF is available for your generator too
+        await ensureJsPDF();
         const ok = await generatePdfFromState();
-        if (!ok) throw new Error('PDF generation returned falsy');
+        if (!ok) throw new Error('Generator returned falsy');
       } else {
-        await __fallbackGenerateAndSave();
+        await fallbackGenerateAndSave();
       }
+      toast('Download started.');
     } catch (err) {
       console.error('PDF download failed:', err);
-      try { alert('PDF download failed.'); } catch(_){}
+      try { alert('PDF download failed: ' + (err && err.message || err)); } catch(_){}
     }
   }
 
-  // Capture clicks on the PDF button and run our download flow
-  document.addEventListener('click', function(e){
-    const t = e.target;
-    const btn = (t && (t.id === 'finishPDF' ? t : (t.closest && t.closest('#finishPDF')))) || null;
-    if (!btn) return;
-    // Ensure we run even if other handlers stop propagation
-    try { e.preventDefault(); } catch(_){}
-    try { e.stopImmediatePropagation(); } catch(_){}
-    try { e.stopPropagation(); } catch(_){}
-    __doPdfDownload();
-  }, true);
+  // 4) Hard-bind to the button: inline + capturing listener
+  function wire(btn){
+    if(!btn || btn.__pdfRescue) return;
+    btn.__pdfRescue = true;
+    try { btn.setAttribute('onclick', 'try{window.__doPdfDownload&&window.__doPdfDownload()}catch(e){}'); } catch(_){}
+    btn.addEventListener('click', function(ev){
+      ev.preventDefault(); ev.stopPropagation();
+      doPdfDownload();
+    }, true);
+  }
+
+  // Expose for inline handler
+  window.__doPdfDownload = doPdfDownload;
+
+  // Wire now and observe future DOM
+  wire(document.getElementById('finishPDF'));
+  var mo = new MutationObserver(function(){ wire(document.getElementById('finishPDF')); });
+  mo.observe(document.documentElement, {subtree:true, childList:true});
 })();
 
 </script>
@@ -1204,7 +1160,6 @@ ok.onclick = function(){
       a.style.display = 'none';
       document.body.appendChild(a);
       a.click();
-      /*LC*/ try { setTimeout(openPdfDone, 160); } catch(_){ }
       setTimeout(function(){ if(a && a.parentNode) a.parentNode.removeChild(a); }, 1000);
       alert("the email has been sent");
     }
