@@ -1,10 +1,11 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>BED – Completion</title>
+  <title>BED – Assessment</title>
   <style>
+
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;background:#fafafa;color:#111;line-height:1.4}
     .wrap{max-width:820px;margin:0 auto;padding:20px}
     h1{font-size:28px;margin:16px 0 4px}
@@ -17,11 +18,93 @@
             max-width:520px;width:88%;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:16px 18px;display:none}
     .modal-footer{text-align:right}
     .btn-primary{background:#2563eb;color:#fff;border:0;border-radius:10px;padding:8px 12px}
-  </style>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  
+/* --- Wizard shell (minimal, won't disturb original styles) --- */
+.page { display:none; }
+.page.active { display:block; }
+.grid { display:grid; gap:12px; }
+.row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
+.field label { display:block; font-weight:600; margin:6px 0 4px; }
+.btn-primary { background:#2563eb; color:#fff; border:1px solid #2563eb; padding:10px 14px; border-radius:10px; }
+.btn-secondary { background:#fff; color:#111; border:1px solid #ddd; padding:10px 14px; border-radius:10px; }
+/* Question cards */
+.q { background:#fff; border:1px solid #eee; border-radius:12px; padding:12px 12px; margin-bottom:10px; }
+.q h4 { margin:0 0 6px; font-size:16px; }
+.q small { color:#666; }
+.choices label { margin-right:10px; }
+</style>
 </head>
 <body>
   <div class="wrap">
+
+    <!-- Page 1: Start -->
+    <div id="page-start" class="page active">
+      <h1>BED HOSPITALITY 2.0</h1>
+      <h2>Start self-assessment</h2>
+      <div class="grid" style="max-width:680px">
+        <div class="row">
+          <div class="field" style="flex:1 1 280px">
+            <label>Your name</label>
+            <input id="userName" placeholder="e.g., Jeroen" />
+          </div>
+          <div class="field" style="flex:1 1 280px">
+            <label>Your email</label>
+            <input id="userEmail" placeholder="you@bedhotels.com" />
+          </div>
+        </div>
+        <div class="row">
+          <div class="field" style="flex:1 1 200px">
+            <label>Hotel</label>
+            <select id="userHotel">
+              <option value="">Select…</option>
+              <option value="BCK">BED Changkian (BCK)</option>
+              <option value="BPS">BED Phrasingh (BPS)</option>
+              <option value="BNM">BED Nimman (BNM)</option>
+              <option value="BCG">BED Chiangmai Gate (BCG)</option>
+            </select>
+          </div>
+        </div>
+        <h3>Peer reviewer (optional)</h3>
+        <div class="row">
+          <div class="field" style="flex:1 1 280px">
+            <label>Peer name</label>
+            <input id="peerName" placeholder="Peer Reviewer"/>
+          </div>
+          <div class="field" style="flex:1 1 280px">
+            <label>Peer email</label>
+            <input id="peerEmail" placeholder="peer@bedhotels.com"/>
+          </div>
+          <div class="field" style="flex:1 1 200px">
+            <label>Peer hotel</label>
+            <select id="peerHotel">
+              <option value="">Select…</option>
+              <option value="BCK">BED Changkian (BCK)</option>
+              <option value="BPS">BED Phrasingh (BPS)</option>
+              <option value="BNM">BED Nimman (BNM)</option>
+              <option value="BCG">BED Chiangmai Gate (BCG)</option>
+            </select>
+          </div>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <button class="btn-primary" id="startBtn">Start assessment</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Page 2: Statements -->
+    <div id="page-questions" class="page">
+      <h1>BED HOSPITALITY 2.0</h1>
+      <h2>Answer 35 statements</h2>
+      <div id="qList"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn-secondary" id="backToStart">Back</button>
+        <button class="btn-primary" id="goFinish">Go to finish</button>
+      </div>
+    </div>
+
+    <!-- Page 3: Finish (reusing your original completion section verbatim) -->
+    <div id="page-finish" class="page">
+<div class="wrap">
     <h1>BED HOSPITALITY 2.0</h1>
     <p class="subtitle">SELF‑ ASSESSMENT COMPLETED</p>
     <div class="btns">
@@ -37,7 +120,7 @@
     <div class="modal-footer"><button id="pdfDoneOK" class="btn-primary" type="button">OK</button></div>
   </div>
 
-  <script id="embeddedQuestions" type="application/json">[{"id": "q1", "number": 1, "statement": "1. I answer very quickly to guest messages", "subtext": "I often check and reply right away", "weight": 1.0, "group": "Standard Skills"}, {"id": "q2", "number": 2, "statement": "2. I make my replies warm and personal", "subtext": "I use their name and add helpful information", "weight": 1.0, "group": "Competencies"}, {"id": "q3", "number": 3, "statement": "3. I make a great first impression", "subtext": "I know it starts with the first message", "weight": 0.5, "group": "Competencies"}, {"id": "q4", "number": 4, "statement": "4. I can see if a guest is stressed or relaxed", "subtext": "I adjust the way I check-in to the mood", "weight": 2.0, "group": "Competencies"}, {"id": "q5", "number": 5, "statement": "5. I ask questions before I ask passports", "subtext": "I welcome guests like friends", "weight": 2.0, "group": "Competencies"}, {"id": "q6", "number": 6, "statement": "6. I can check-in a guest in 60 seconds", "subtext": "I timed three standard check-ins", "weight": 1.0, "group": "Standard Skills"}, {"id": "q7", "number": 7, "statement": "7. I check in groups differently than FIT", "subtext": "I usually check-in groups with the leader", "weight": 0.5, "group": "Competencies"}, {"id": "q8", "number": 8, "statement": "8. I don't say that check-in time is 14:00", "subtext": "Guests can check-in when the room is ready", "weight": 1.5, "group": "Competencies"}, {"id": "q9", "number": 9, "statement": "9. I dont show stress when there is a problem", "subtext": "I know that makes guests really worry", "weight": 2.0, "group": "Competencies"}, {"id": "q10", "number": 10, "statement": "10. I show genuine interest during check-out", "subtext": "I ask about their stay or next destination", "weight": 1.0, "group": "Competencies"}, {"id": "q11", "number": 11, "statement": "11. I make great last impressions", "subtext": "I walk them out and wait until their car has left", "weight": 2.0, "group": "Competencies"}, {"id": "q12", "number": 12, "statement": "12. I use names to connect with guests", "subtext": "When it feels right I introduce myself", "weight": 0.5, "group": "Competencies"}, {"id": "q13", "number": 13, "statement": "13. I scan every guest every time", "subtext": "I dont look at a group but at each individual", "weight": 2.0, "group": "Competencies"}, {"id": "q14", "number": 14, "statement": "14. I am good at scanning", "subtext": "I see what people need before they ask", "weight": 2.0, "group": "Competencies"}, {"id": "q15", "number": 15, "statement": "15. I create unique surprises for guests", "subtext": "I do more than offering free things", "weight": 2.0, "group": "Competencies"}, {"id": "q16", "number": 16, "statement": "16. Music is an essential part of the vibe", "subtext": "I listen to make sure we play the right music", "weight": 0.5, "group": "Standard Skills"}, {"id": "q17", "number": 17, "statement": "17. I tell guests they can use other BED facilities", "subtext": "I offer downtown coffee, bigger pool or breakfast", "weight": 1.5, "group": "Collaboration"}, {"id": "q18", "number": 18, "statement": "18. It's annoying when a room key doesn't work", "subtext": "I go up to make sure the new key works", "weight": 2.0, "group": "Standard Skills"}, {"id": "q19", "number": 19, "statement": "19. I talk with guests because I am interested", "subtext": "When I force myself it will not be real", "weight": 1.0, "group": "Competencies"}, {"id": "q20", "number": 20, "statement": "20. I often give my friends honest feedback", "subtext": "Im happy to help them to grow", "weight": 1.5, "group": "Collaboration"}, {"id": "q21", "number": 21, "statement": "21. My friends often give me honest feedback", "subtext": "I'm happy they help me to grow", "weight": 1.0, "group": "Collaboration"}, {"id": "q22", "number": 22, "statement": "22. I can answer most questions about BED", "subtext": "I have visited the rooms in all our hotels", "weight": 0.5, "group": "Standard Skills"}, {"id": "q23", "number": 23, "statement": "23. I understand the meaning of showtime", "subtext": "The magic happens from 0700-1000", "weight": 0.5, "group": "Standard Skills"}, {"id": "q24", "number": 24, "statement": "24. I have peeled my own onion", "subtext": "I dont act. Usually I show my true self", "weight": 1.5, "group": "Competencies"}, {"id": "q25", "number": 25, "statement": "25. I use ChatGPT or Gemini", "subtext": "I ask for help with e.g., guest messages", "weight": 0.5, "group": "Standard Skills"}, {"id": "q26", "number": 26, "statement": "26. I send messages that look like I wrote them", "subtext": "I don't copy AI because guests will know", "weight": 1.5, "group": "Competencies"}, {"id": "q27", "number": 27, "statement": "27. I use ChatGPT or Gemini", "subtext": "I ask help to analyze and solve problems", "weight": 1.5, "group": "Ownership"}, {"id": "q28", "number": 28, "statement": "28. I never gossip. I signed I Promise", "subtext": "I dont talk badly when someones not here", "weight": 2.0, "group": "Collaboration"}, {"id": "q29", "number": 29, "statement": "29. I really understand that rules can be flexible", "subtext": "Without reasons many rules just disappear", "weight": 1.0, "group": "Ownership"}, {"id": "q30", "number": 30, "statement": "30. I am confident about my own judgment", "subtext": "I make decisions without asking permission", "weight": 1.0, "group": "Ownership"}, {"id": "q31", "number": 31, "statement": "31. I look after the whole hotel, not only front", "subtext": "I include rooms, maintenance and back areas", "weight": 2.0, "group": "Ownership"}, {"id": "q32", "number": 32, "statement": "32. I look around when I arrive at the hotel", "subtext": "I share responsibility for the whole hotel", "weight": 0.5, "group": "Ownership"}, {"id": "q33", "number": 33, "statement": "33. I don't pass issues to others but act myself", "subtext": "I follow up later to make sure it's fixed", "weight": 1.0, "group": "Ownership"}, {"id": "q34", "number": 34, "statement": "34. I am not afraid of the CEO or my coach", "subtext": "I know I am allowed to make mistakes", "weight": 1.0, "group": "Ownership"}, {"id": "q35", "number": 35, "statement": "35. I have no manuals that show me what to do", "subtext": "That means I cannot do anything wrong", "weight": 0.5, "group": "Ownership"}]</script>
+  <script id="embeddedQuestions" type="application/json">[{"id": "q1", "number": 1, "statement": "1. I answer very quickly to guest messages", "subtext": "I often check and reply right away", "weight": 1.0}, {"id": "q2", "number": 2, "statement": "2. I make my replies warm and personal", "subtext": "I use their name and add helpful information", "weight": 1.0}, {"id": "q3", "number": 3, "statement": "3. I make a great first impression", "subtext": "I know it starts with the first message", "weight": 0.5}, {"id": "q4", "number": 4, "statement": "4. I can see if a guest is stressed or relaxed", "subtext": "I adjust the way I check-in to the mood", "weight": 2.0}, {"id": "q5", "number": 5, "statement": "5. I ask questions before I ask passports", "subtext": "I welcome guests like friends", "weight": 2.0}, {"id": "q6", "number": 6, "statement": "6. I can check-in a guest in 60 seconds", "subtext": "I timed three standard check-ins", "weight": 1.0}, {"id": "q7", "number": 7, "statement": "7. I check in groups differently than FIT", "subtext": "I usually check-in groups with the leader", "weight": 0.5}, {"id": "q8", "number": 8, "statement": "8. I don't say that check-in time is 14:00", "subtext": "Guests can check-in when the room is ready", "weight": 1.5}, {"id": "q9", "number": 9, "statement": "9. I dont show stress when there is a problem", "subtext": "I know that makes guests really worry", "weight": 2.0}, {"id": "q10", "number": 10, "statement": "10. I show genuine interest during check-out", "subtext": "I ask about their stay or next destination", "weight": 1.0}, {"id": "q11", "number": 11, "statement": "11. I make great last impressions", "subtext": "I walk them out and wait until their car has left", "weight": 2.0}, {"id": "q12", "number": 12, "statement": "12. I use names to connect with guests", "subtext": "When it feels right I introduce myself", "weight": 0.5}, {"id": "q13", "number": 13, "statement": "13. I scan every guest every time", "subtext": "I dont look at a group but at each individual", "weight": 2.0}, {"id": "q14", "number": 14, "statement": "14. I am good at scanning", "subtext": "I see what people need before they ask", "weight": 2.0}, {"id": "q15", "number": 15, "statement": "15. I create unique surprises for guests", "subtext": "I do more than offering free things", "weight": 2.0}, {"id": "q16", "number": 16, "statement": "16. Music is an essential part of the vibe", "subtext": "I listen to make sure we play the right music", "weight": 0.5}, {"id": "q17", "number": 17, "statement": "17. I tell guests they can use other BED facilities", "subtext": "I offer downtown coffee, bigger pool or breakfast", "weight": 1.5}, {"id": "q18", "number": 18, "statement": "18. It's annoying when a room key doesn't work", "subtext": "I go up to make sure the new key works", "weight": 2.0}, {"id": "q19", "number": 19, "statement": "19. I talk with guests because I am interested", "subtext": "When I force myself it will not be real", "weight": 1.0}, {"id": "q20", "number": 20, "statement": "20. I often give my friends honest feedback", "subtext": "Im happy to help them to grow", "weight": 1.5}, {"id": "q21", "number": 21, "statement": "21. My friends often give me honest feedback", "subtext": "I'm happy they help me to grow", "weight": 1.0}, {"id": "q22", "number": 22, "statement": "22. I can answer most questions about BED", "subtext": "I have visited the rooms in all our hotels", "weight": 0.5}, {"id": "q23", "number": 23, "statement": "23. I understand the meaning of showtime", "subtext": "The magic happens from 0700-1000", "weight": 0.5}, {"id": "q24", "number": 24, "statement": "24. I have peeled my own onion", "subtext": "I dont act. Usually I show my true self", "weight": 1.5}, {"id": "q25", "number": 25, "statement": "25. I use ChatGPT or Gemini", "subtext": "I ask for help with e.g., guest messages", "weight": 0.5}, {"id": "q26", "number": 26, "statement": "26. I send messages that look like I wrote them", "subtext": "I don't copy AI because guests will know", "weight": 1.5}, {"id": "q27", "number": 27, "statement": "27. I use ChatGPT or Gemini", "subtext": "I ask help to analyze and solve problems", "weight": 1.5}, {"id": "q28", "number": 28, "statement": "28. I never gossip. I signed I Promise", "subtext": "I dont talk badly when someones not here", "weight": 2.0}, {"id": "q29", "number": 29, "statement": "29. I really understand that rules can be flexible", "subtext": "Without reasons many rules just disappear", "weight": 1.0}, {"id": "q30", "number": 30, "statement": "30. I am confident about my own judgment", "subtext": "I make decisions without asking permission", "weight": 1.0}, {"id": "q31", "number": 31, "statement": "31. I look after the whole hotel, not only front", "subtext": "I include rooms, maintenance and back areas", "weight": 2.0}, {"id": "q32", "number": 32, "statement": "32. I look around when I arrive at the hotel", "subtext": "I share responsibility for the whole hotel", "weight": 0.5}, {"id": "q33", "number": 33, "statement": "33. I don't pass issues to others but act myself", "subtext": "I follow up later to make sure it's fixed", "weight": 1.0}, {"id": "q34", "number": 34, "statement": "34. I am not afraid of the CEO or my coach", "subtext": "I know I am allowed to make mistakes", "weight": 1.0}, {"id": "q35", "number": 35, "statement": "35. I have no manuals that show me what to do", "subtext": "That means I cannot do anything wrong", "weight": 0.5}]</script>
 
   <script>
     function openPdfDone(){ try{ 
@@ -198,5 +281,235 @@
       if(btn) btn.addEventListener('click', function(){ if(lock) return; lock=true; try{ savePdfNow(); }finally{ setTimeout(function(){ lock=false; }, 600); } });
     })();
   </script>
+    </div>
+
+  </div>
+
+  <!-- Embedded questions (35 with groups/weights) -->
+  <script id="embeddedQuestions" type="application/json">[{"id": "q1", "number": 1, "statement": "1. I answer very quickly to guest messages", "subtext": "I often check and reply right away", "weight": 1.0, "group": "Standard Skills"}, {"id": "q2", "number": 2, "statement": "2. I make my replies warm and personal", "subtext": "I use their name and add helpful information", "weight": 1.0, "group": "Competencies"}, {"id": "q3", "number": 3, "statement": "3. I make a great first impression", "subtext": "I know it starts with the first message", "weight": 0.5, "group": "Competencies"}, {"id": "q4", "number": 4, "statement": "4. I can see if a guest is stressed or relaxed", "subtext": "I adjust the way I check-in to the mood", "weight": 2.0, "group": "Competencies"}, {"id": "q5", "number": 5, "statement": "5. I ask questions before I ask passports", "subtext": "I welcome guests like friends", "weight": 2.0, "group": "Competencies"}, {"id": "q6", "number": 6, "statement": "6. I can check-in a guest in 60 seconds", "subtext": "I timed three standard check-ins", "weight": 1.0, "group": "Standard Skills"}, {"id": "q7", "number": 7, "statement": "7. I check in groups differently than FIT", "subtext": "I usually check-in groups with the leader", "weight": 0.5, "group": "Competencies"}, {"id": "q8", "number": 8, "statement": "8. I don't say that check-in time is 14:00", "subtext": "Guests can check-in when the room is ready", "weight": 1.5, "group": "Competencies"}, {"id": "q9", "number": 9, "statement": "9. I dont show stress when there is a problem", "subtext": "I know that makes guests really worry", "weight": 2.0, "group": "Competencies"}, {"id": "q10", "number": 10, "statement": "10. I show genuine interest during check-out", "subtext": "I ask about their stay or next destination", "weight": 1.0, "group": "Competencies"}, {"id": "q11", "number": 11, "statement": "11. I make great last impressions", "subtext": "I walk them out and wait until their car has left", "weight": 2.0, "group": "Competencies"}, {"id": "q12", "number": 12, "statement": "12. I use names to connect with guests", "subtext": "When it feels right I introduce myself", "weight": 0.5, "group": "Competencies"}, {"id": "q13", "number": 13, "statement": "13. I scan every guest every time", "subtext": "I dont look at a group but at each individual", "weight": 2.0, "group": "Competencies"}, {"id": "q14", "number": 14, "statement": "14. I am good at scanning", "subtext": "I see what people need before they ask", "weight": 2.0, "group": "Competencies"}, {"id": "q15", "number": 15, "statement": "15. I create unique surprises for guests", "subtext": "I do more than offering free things", "weight": 2.0, "group": "Competencies"}, {"id": "q16", "number": 16, "statement": "16. Music is an essential part of the vibe", "subtext": "I listen to make sure we play the right music", "weight": 0.5, "group": "Standard Skills"}, {"id": "q17", "number": 17, "statement": "17. I tell guests they can use other BED facilities", "subtext": "I offer downtown coffee, bigger pool or breakfast", "weight": 1.5, "group": "Collaboration"}, {"id": "q18", "number": 18, "statement": "18. It's annoying when a room key doesn't work", "subtext": "I go up to make sure the new key works", "weight": 2.0, "group": "Standard Skills"}, {"id": "q19", "number": 19, "statement": "19. I talk with guests because I am interested", "subtext": "When I force myself it will not be real", "weight": 1.0, "group": "Competencies"}, {"id": "q20", "number": 20, "statement": "20. I often give my friends honest feedback", "subtext": "Im happy to help them to grow", "weight": 1.5, "group": "Collaboration"}, {"id": "q21", "number": 21, "statement": "21. My friends often give me honest feedback", "subtext": "I'm happy they help me to grow", "weight": 1.0, "group": "Collaboration"}, {"id": "q22", "number": 22, "statement": "22. I can answer most questions about BED", "subtext": "I have visited the rooms in all our hotels", "weight": 0.5, "group": "Standard Skills"}, {"id": "q23", "number": 23, "statement": "23. I understand the meaning of showtime", "subtext": "The magic happens from 0700-1000", "weight": 0.5, "group": "Standard Skills"}, {"id": "q24", "number": 24, "statement": "24. I have peeled my own onion", "subtext": "I dont act. Usually I show my true self", "weight": 1.5, "group": "Competencies"}, {"id": "q25", "number": 25, "statement": "25. I use ChatGPT or Gemini", "subtext": "I ask for help with e.g., guest messages", "weight": 0.5, "group": "Standard Skills"}, {"id": "q26", "number": 26, "statement": "26. I send messages that look like I wrote them", "subtext": "I don't copy AI because guests will know", "weight": 1.5, "group": "Competencies"}, {"id": "q27", "number": 27, "statement": "27. I use ChatGPT or Gemini", "subtext": "I ask help to analyze and solve problems", "weight": 1.5, "group": "Ownership"}, {"id": "q28", "number": 28, "statement": "28. I never gossip. I signed I Promise", "subtext": "I dont talk badly when someones not here", "weight": 2.0, "group": "Collaboration"}, {"id": "q29", "number": 29, "statement": "29. I really understand that rules can be flexible", "subtext": "Without reasons many rules just disappear", "weight": 1.0, "group": "Ownership"}, {"id": "q30", "number": 30, "statement": "30. I am confident about my own judgment", "subtext": "I make decisions without asking permission", "weight": 1.0, "group": "Ownership"}, {"id": "q31", "number": 31, "statement": "31. I look after the whole hotel, not only front", "subtext": "I include rooms, maintenance and back areas", "weight": 2.0, "group": "Ownership"}, {"id": "q32", "number": 32, "statement": "32. I look around when I arrive at the hotel", "subtext": "I share responsibility for the whole hotel", "weight": 0.5, "group": "Ownership"}, {"id": "q33", "number": 33, "statement": "33. I don't pass issues to others but act myself", "subtext": "I follow up later to make sure it's fixed", "weight": 1.0, "group": "Ownership"}, {"id": "q34", "number": 34, "statement": "34. I am not afraid of the CEO or my coach", "subtext": "I know I am allowed to make mistakes", "weight": 1.0, "group": "Ownership"}, {"id": "q35", "number": 35, "statement": "35. I have no manuals that show me what to do", "subtext": "That means I cannot do anything wrong", "weight": 0.5, "group": "Ownership"}]</script>
+
+  <!-- Wizard + glue logic (keeps your original PDF code intact) -->
+  <script>
+  
+function fmt1(x){ if(x==null||isNaN(+x)) return ''; return (+x).toFixed(1); }
+
+  (function() {
+    function $(id) { return document.getElementById(id); }
+    function show(id) {
+      ['page-start','page-questions','page-finish'].forEach(k=>{ var el=$(k); if(el) el.classList.remove('active'); });
+      $(id).classList.add('active'); window.scrollTo(0,0);
+    }
+    function getQuestions(){
+      try { return JSON.parse(document.getElementById('embeddedQuestions').textContent); }
+      catch(_ ) { return []; }
+    }
+    function renderQuestions(){
+      var host = $('qList'); if(!host) return;
+      var qs = getQuestions();
+      host.innerHTML = '';
+      qs.forEach(function(q){
+        var box = document.createElement('div'); box.className='q';
+        var h = document.createElement('h4'); h.textContent = q.statement; box.appendChild(h);
+        if(q.subtext){ var sm=document.createElement('small'); sm.textContent=q.subtext; box.appendChild(sm); }
+        var choices = document.createElement('div'); choices.className='choices';
+        for(var v=1; v<=5; v++){ 
+          var id = q.id+'_'+v;
+          var lbl = document.createElement('label');
+          var rb = document.createElement('input'); rb.type='radio'; rb.name=q.id; rb.value=v; rb.id=id;
+          lbl.appendChild(rb); lbl.appendChild(document.createTextNode(' '+v));
+          choices.appendChild(lbl);
+        }
+        // NO weight label in UI (weights are internal for PDF metrics)
+        box.appendChild(choices);
+        host.appendChild(box);
+      });
+    }
+    function gather(){
+      var S = window.sarState || (window.sarState = {});
+      S.user = { name:$('userName').value.trim(), email:$('userEmail').value.trim(), hotel:$('userHotel').value.trim() };
+      S.peer = { name:$('peerName').value.trim(), email:$('peerEmail').value.trim(), hotel:$('peerHotel').value.trim() };
+      if(!S.answers) S.answers = {};
+      getQuestions().forEach(function(q){
+        var picked = document.querySelector('input[name="'+q.id+'"]:checked');
+        S.answers[q.id] = picked ? parseInt(picked.value,10) : 0;
+      });
+      try { localStorage.setItem('sarState', JSON.stringify(S)); } catch(_ ) { }
+      window.sarState = S; // your app relies on this before finishing
+      return S;
+    }
+    document.addEventListener('DOMContentLoaded', function(){
+      renderQuestions();
+      $('startBtn').onclick = function(){ show('page-questions'); };
+      $('backToStart').onclick = function(){ show('page-start'); };
+      $('goFinish').onclick = function(){ gather(); show('page-finish'); };
+      // Intercept Back button on finish page to go back inside the wizard
+      var backBtn = document.querySelector('#page-finish button[onclick="history.back()"]');
+      if(backBtn) backBtn.onclick = function(e){ e.preventDefault(); show('page-questions'); };
+    });
+  })();
+  </script>
+
+  <!-- Your original PDF/completion scripts (patched to use fmt1) -->
+<script>
+
+    function openPdfDone(){ try{ 
+      var m=document.getElementById('pdfDoneModal'); var k=document.getElementById('pdfDoneMask');
+      if(k) k.style.display='block'; if(m){ m.style.display='block'; var ok=document.getElementById('pdfDoneOK'); if(ok) ok.onclick=closePdfDone; }
+    }catch(_ ){}}
+    function closePdfDone(){ var m=document.getElementById('pdfDoneModal'); var k=document.getElementById('pdfDoneMask'); if(k) k.style.display='none'; if(m) m.style.display='none'; }
+
+    function tryJSON(s){ try{ return JSON.parse(s); }catch(_ ){ return null; } }
+    window.sarState = window.sarState || (typeof sarState !== 'undefined' ? sarState : {});
+    (function hydrate(){
+      var S = window.sarState = window.sarState || {};
+      var saved = tryJSON(localStorage.getItem('sarState'));
+      if(saved){ S.user = S.user || saved.user; S.peer = S.peer || saved.peer; S.answers = S.answers || saved.answers; }
+      try{ for (var i=0;i<localStorage.length;i++){ var key=localStorage.key(i); var v=tryJSON(localStorage.getItem(key)); if(!v) continue;
+            var cand = v.peer || v.reviewer || v;
+            var name = cand && (cand.name || cand.nickname) || v.peerName || v.reviewerName || v['peer_name'] || v['reviewer_name'];
+            var email= cand && (cand.email||cand.mail) || v.peerEmail || v.reviewerEmail || v['peer_email'] || v['reviewer_email'];
+            var hotel= cand && (cand.hotel||cand.location) || v.peerHotel || v.reviewerHotel || v['peer_hotel'] || v['reviewer_hotel'] || v.peerLocation;
+            S.peer = S.peer || {};
+            if(name && !S.peer.name) S.peer.name = name;
+            if(email && !S.peer.email) S.peer.email = email;
+            if(hotel && !S.peer.hotel) S.peer.hotel = hotel;
+      } }catch(_ ){}
+      try{ var p=new URLSearchParams(location.search);
+        var n=p.get('peerName')||p.get('reviewerName'); var e=p.get('peerEmail')||p.get('reviewerEmail'); var h=p.get('peerHotel')||p.get('reviewerHotel')||p.get('peerLocation');
+        S.peer = S.peer || {};
+        if(n && !S.peer.name) S.peer.name = n;
+        if(e && !S.peer.email) S.peer.email = e;
+        if(h && !S.peer.hotel) S.peer.hotel = h;
+      }catch(_ ){}
+    })();
+
+    var HOTEL_MAP = { BCK:'BED Changkian', BPS:'BED Phrasingh', BNM:'BED Nimman', BCG:'BED Chiangmai Gate' };
+    function formatHotel(input){
+      if(!input) return '-';
+      var s=String(input);
+      var m=s.match(/\b(BCK|BPS|BNM|BCG)\b/i);
+      if(m){ var code=m[1].toUpperCase(); var full=HOTEL_MAP[code]; if(full) return full+' ('+code+')'; }
+      for (var k in HOTEL_MAP){ if (Object.hasOwnProperty.call(HOTEL_MAP,k)){ if (s.toLowerCase() === HOTEL_MAP[k].toLowerCase()) return HOTEL_MAP[k] + ' (' + k + ')'; } }
+      if (s.indexOf('(')!==-1 && s.indexOf(')')!==-1) return s;
+      return s;
+    }
+
+    function parseWeight(w){ var n=parseFloat(w); return (isFinite(n)? Math.round(n*10)/10 : 1); }
+    function fmt1(x){ var n=parseFloat(x); return isFinite(n)? n.toFixed(1) : String(x); }
+    function fmtDate_DDMMMYYYY(d){ var M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']; var dd=String(d.getDate()).padStart(2,'0'); var mmm=M[d.getMonth()]; var yyyy=d.getFullYear(); return dd+'-'+mmm+'-'+yyyy; }
+
+    function savePdfNow(){
+      var JS=(function(){ try { return (window.jspdf && window.jspdf.jsPDF)? window.jspdf.jsPDF:null; }catch(_ ){ return null; } })();
+      if(!JS){ alert('PDF library is not loaded.'); return false; }
+      var S = window.sarState || {};
+
+      if(!S.answers || Object.keys(S.answers||{}).length===0){ try{ 
+        document.querySelectorAll('.q-item input[type="radio"]:checked').forEach(function(inp){
+          var wrap=inp.closest('.q-item'); if(!wrap) return; var qid=wrap.getAttribute('data-qid'); var v=parseInt(inp.value,10);
+          if(!S.answers) S.answers={}; if(qid && v>=1 && v<=5) S.answers[qid]=v;
+        });
+      }catch(_ ){}}
+      if(!S.answers || Object.keys(S.answers).length===0){ var saved = tryJSON(localStorage.getItem('sarState')); if(saved && saved.answers) S.answers = saved.answers; }
+
+      function getQuestionsSync(){ var n=document.getElementById('embeddedQuestions'); try{ return JSON.parse(n.textContent); }catch(_ ){ return []; } }
+      var qs = getQuestionsSync(); var A = S.answers || {};
+
+      var totalW=0, earned=0;
+      for (var i=0;i<qs.length;i++){ var w=parseWeight(qs[i].weight); var v=parseInt(A[qs[i].id],10); totalW+=w; if(v>=1 && v<=5) earned+=v*w; }
+      var pct = totalW>0 ? Math.round((earned/(totalW*5))*100) : 0;
+      var today = new Date();
+
+      var doc = new JS({unit:'pt', format:'a4'});
+      var FONT_HEADER=14, FONT_BODY=10, FONT_TITLE=22;
+      var LINE = Math.round(FONT_BODY * 1.3);
+      var x=42, y=56;
+      function cx(left,width){ return left+width/2; }
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(FONT_TITLE);
+      doc.text('BED SELF-ASSESSMENT REPORT — '+pct+'%', x, y); y += Math.round(LINE*1.6);
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(FONT_HEADER); doc.text('INFORMATION TEAM MEMBER', x, y); y += LINE;
+      doc.setFont('helvetica','normal'); doc.setFontSize(FONT_BODY);
+      doc.text('Report Date: '+fmtDate_DDMMMYYYY(today), x, y); y += LINE;
+      doc.text('Name employee: ' + (S.user && (S.user.nickname||S.user.name||S.user.fullname) ? (S.user.nickname||S.user.name||S.user.fullname) : '-'), x, y); y += LINE;
+      doc.text('Location: ' + (S.user && S.user.hotel ? formatHotel(S.user.hotel) : '-'), x, y); y += LINE;
+      doc.text('Email: ' + (S.user && (S.user.email||S.user.mail) ? (S.user.email||S.user.mail) : '-'), x, y); y += LINE;
+      y += LINE;
+
+      function val(v,a){ return (v!=null && v!=='')? v : a; }
+      var peer= S.peer||{};
+      var peerName = val(peer.name||peer.nickname, S.peerName || S.reviewerName || S['peer_name'] || S['reviewer_name'] || '-');
+      var peerEmail= val(peer.email||peer.mail, S.peerEmail || S.reviewerEmail || S['peer_email'] || S['reviewer_email'] || '-');
+      var peerHotel= val(peer.hotel||peer.location, S.peerHotel || S.reviewerHotel || S['peer_hotel'] || S['reviewer_hotel'] || S.peerLocation || '');
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(FONT_HEADER); doc.text('INFORMATION PEER REVIEWER', x, y); y += LINE;
+      doc.setFont('helvetica','normal'); doc.setFontSize(FONT_BODY);
+      doc.text('Name peer reviewer: '+(peerName||'-'), x, y); y += LINE;
+      doc.text('Location: ' + (peerHotel ? formatHotel(peerHotel) : '-'), x, y); y += LINE;
+      doc.text('Email: ' + (peerEmail||'-'), x, y); y += LINE;
+      y += LINE;
+
+      var totalPoints = Math.round(totalW*5), earnedInt = Math.round(earned);
+      doc.setFont('helvetica','bold'); doc.setFontSize(FONT_HEADER); doc.text('SELF-ASSESSMENT RESULTS', x, y); y += LINE;
+      doc.setFont('helvetica','normal'); doc.setFontSize(FONT_BODY);
+      doc.text('Self-assessment score: ' + earnedInt + ' / ' + totalPoints, x, y); y += LINE;
+      doc.text('Self-assessment percentage: ' + pct + '%', x, y); y += LINE;
+      y += LINE;
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(FONT_HEADER); doc.text('RESULT ANALYSIS', x, y); y += LINE*4;
+
+      doc.setFont('helvetica','bold'); doc.setFontSize(FONT_BODY);
+      var col={ stmt:{left:x,width:340}, score:{left:x+360,width:60}, weight:{left:x+420,width:60}, total:{left:x+480,width:60} };
+      function drawHeader(){ doc.text('STATEMENT', col.stmt.left, y);
+        doc.text('SCORE',  cx(col.score.left,col.score.width), y, {align:'center'});
+        doc.text('WEIGHT', cx(col.weight.left,col.weight.width), y, {align:'center'});
+        doc.text('TOTAL',  cx(col.total.left,col.total.width), y, {align:'center'});
+        y += Math.round(LINE*0.6); doc.setLineWidth(0.5); doc.line(x, y, x+520, y); y += Math.round(LINE*0.7);
+        doc.setFont('helvetica','normal');
+      }
+      drawHeader();
+
+      for (var i=0;i<qs.length;i++){
+        var st=qs[i].statement||''; var sub=qs[i].subtext||''; var v=parseInt(A[qs[i].id],10);
+        var w=parseWeight(qs[i].weight); var total=(v>=1&&v<=5)? v*w : '-';
+        var wStr=fmt1(w); var tStr=(typeof total==='number' && isFinite(total))? total.toFixed(1): String(total);
+
+        var m=st.match(/^\s*(\d+[\.)]\s*)(.*)$/); var prefix=m? m[1] : ''; var rest=m? m[2] : st;
+        var prefixWidth = prefix? doc.getTextWidth(prefix):0; var wrapWidth = col.stmt.width - prefixWidth;
+        var lines = doc.splitTextToSize(rest, wrapWidth>10?wrapWidth:col.stmt.width);
+
+        for (var k=0;k<lines.length;k++){
+          doc.setFont('helvetica','bold');
+          if(k===0 && prefix){ doc.text(prefix, col.stmt.left, y); doc.text(lines[k], col.stmt.left+prefixWidth, y); }
+          else { doc.text(lines[k], col.stmt.left, y); }
+          if(k===0){
+            doc.setFont('helvetica','normal');
+            doc.text(String(isFinite(v)?v:'-'), cx(col.score.left,col.score.width), y, {align:'center'});
+            doc.text(wStr,                            cx(col.weight.left,col.weight.width), y, {align:'center'});
+            doc.text(tStr,                            cx(col.total.left,col.total.width),  y, {align:'center'});
+          }
+          y += LINE;
+          if(y>780){ doc.addPage(); y=56; doc.setFont('helvetica','bold'); doc.setFontSize(FONT_BODY); drawHeader(); }
+        }
+        if(sub){
+          var subs=doc.splitTextToSize(sub, wrapWidth>10?wrapWidth:col.stmt.width);
+          for (var s=0;s<subs.length;s++){ doc.setFont('helvetica','normal'); doc.text(subs[s], col.stmt.left+prefixWidth, y); y += LINE;
+            if(y>780){ doc.addPage(); y=56; doc.setFont('helvetica','bold'); doc.setFontSize(FONT_BODY); drawHeader(); }
+          }
+        }
+      }
+
+      function fmtStamp(d){ function p(n){return String(n).padStart(2,'0')}; return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'_'+p(d.getHours())+'-'+p(d.getMinutes())+'_'+p(d.getSeconds()); }
+      var fname='BED_Assessment_'+(S.user && (S.user.nickname||S.user.name) ? (S.user.nickname||S.user.name).replace(/\s+/g,'_'):'User')+'_'+fmtStamp(today)+'.pdf';
+      try{ doc.save(fname); }catch(e){ alert('PDF save failed: '+e); return false; }
+      setTimeout(openPdfDone, 120);
+      return true;
+    }
+
+    (function(){ var btn=document.getElementById('finishPDF'); var lock=false;
+      if(btn) btn.addEventListener('click', function(){ if(lock) return; lock=true; try{ savePdfNow(); }finally{ setTimeout(function(){ lock=false; }, 600); } });
+    })();
+  
+</script>
 </body>
 </html>
