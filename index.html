@@ -17,27 +17,13 @@
             max-width:520px;width:88%;border-radius:12px;box-shadow:0 10px 30px rgba(0,0,0,.25);padding:16px 18px;display:none}
     .modal-footer{text-align:right}
     .btn-primary{background:#2563eb;color:#fff;border:0;border-radius:10px;padding:8px 12px}
-      .note{color:#666;font-size:12px;margin:12px 0 20px}
-  
-  /* Global font: Roboto for all text */
-  body, button, input, select, textarea, label, p, li, td, th, small, span, div {
-    font-family: 'Roboto', system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, 'Apple Color Emoji','Segoe UI Emoji', 'Segoe UI Symbol';
-  }
-</style>
-  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js">
-function formatWeight(w){
-  if (w == null || isNaN(+w)) return '';
-  return (+w).toFixed(1);
-}
-</script>
-
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  </style>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 </head>
 <body>
   <div class="wrap">
     <h1>BED HOSPITALITY 2.0</h1>
     <p class="subtitle">SELF‑ ASSESSMENT COMPLETED</p>
-    <p class="note">To download your complete test results please click PDF</p>
     <div class="btns">
       <button onclick="history.back()">Back</button>
       <button id="finishPDF">PDF</button>
@@ -47,7 +33,7 @@ function formatWeight(w){
   <div id="pdfDoneMask" class="modal-mask"></div>
   <div id="pdfDoneModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="pdfDoneTitle">
     <div class="modal-header"><h3 id="pdfDoneTitle">Done!</h3></div>
-    <div class="modal-body"><p>Done! Your assessment report and your professional analysis is downloaded</p></div>
+    <div class="modal-body"><p>Your assessment report with recommendations is downloaded.</p></div>
     <div class="modal-footer"><button id="pdfDoneOK" class="btn-primary" type="button">OK</button></div>
   </div>
 
@@ -215,7 +201,7 @@ function formatWeight(w){
 
 <script>
 (function(){
-  if (window.__sar35_patched__) return; window.__sar35_patched__ = true;
+  if (window.__sar35_helper__) return; window.__sar35_helper__ = true;
   function qList(){
     try{ return JSON.parse(document.getElementById('embeddedQuestions').textContent); }
     catch(e){ return []; }
@@ -238,11 +224,11 @@ function formatWeight(w){
     for (const q of qs){
       const w = Number(q.weight)||0;
       const ans = Number(answers['q'+q.number] ?? answers[q.id] ?? 0);
-      const rawAdd = w * ans;
-      totals.raw += rawAdd;
+      const add = w * (ans>=1 && ans<=5 ? ans : 0);
+      totals.raw += add;
       if (q.group){
         if (!groups[q.group]) groups[q.group] = {raw:0, max:0, pct:0, count:0};
-        groups[q.group].raw += rawAdd;
+        groups[q.group].raw += add;
         groups[q.group].max += w*5;
         groups[q.group].count += 1;
       }
@@ -258,7 +244,6 @@ function formatWeight(w){
     sarState.analysis.band = window.sarBands.getBand(totals.pct);
     return sarState.analysis;
   };
-  try { if (window.sarState) window.computeSarTotals(window.sarState); } catch(e){}
 })();
 </script>
 
